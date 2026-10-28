@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+ body{margin:0;background:#cfd2d6;font-family:Helvetica,Arial,sans-serif;}
+ #wrap{display:flex;gap:0;padding:0;}
+ .v{position:relative}
+ .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-weight:700;color:#222;font-size:22px;letter-spacing:1px}
+ .sub{font-weight:400;font-size:15px;color:#444;margin-top:3px}
+ #title{position:absolute;top:14px;left:0;right:0;text-align:center;font-size:20px;color:#333;letter-spacing:3px}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><div id="wrap"></div><div id="title"></div>
+<script type="module">
+import * as THREE from 'three';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+
+const P = new URLSearchParams(location.search);
+const views = JSON.parse(P.get('views'));          // [{state, lit, flash, caption, sub, cut, explode, yaw, pitch, dist, target}]
+const W = +P.get('w') || 520, H = +P.get('h') || 1100;
+document.getElementById('title').textContent = P.get('title') || '';
+const loader = new STLLoader();
+const cache = {};
+async function geo(name){
+  if(!cache[name]){ cache[name] = new Promise(res=>loader.load('asm/'+name+'.stl', g=>{ res(toCreasedNormals(g, 0.6)); })); }
+  return cache[name];
+}
+const silver = () => new THREE.MeshStandardMaterial({color:0xc9ced6, metalness:0.55, roughness:0.28});
+const black  = () => new THREE.MeshStandardMaterial({color:0x0c0c0e, metalness:0.2, roughness:0.35});
+const inner  = () => new THREE.MeshStandardMaterial({color:0x8a8f96, metalness:0.6, roughness:0.4});
+function glass(lit, col){
+  return new THREE.MeshPhysicalMaterial({color: lit? col : 0xe8ecf0, emissive: lit? col:0x000000, emissiveIntensity: lit? (col==0xff1a0a?0.75:2.2):0,
+      metalness:0, roughness: lit?0.35:0.15, transparent:true, opacity: lit?0.97:0.55, clearcoat:1});
+}
+let done = 0;
+for (const v of views){
+  const div = document.createElement('div'); div.className='v';
+  const r = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+  r.setSize(W, H); r.setPixelRatio(1); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+  r.localClippingEnabled = true;
+  div.appendChild(r.domElement);
+  const cap = document.createElement('div'); cap.className='cap'; cap.innerHTML = v.caption + (v.sub?`<div class="sub">${v.sub}</div>`:''); div.appendChild(cap);
+  document.getElementById('wrap').appendChild(div);
+  const scene = new THREE.Scene();
+  const bg = new THREE.Color(v.bg || 0xcfd2d6); scene.background = bg;
+  const pm = new THREE.PMREMGenerator(r); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+  const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(300, 200, 400); scene.add(key);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9)); scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 1.6));
+  const fill = new THREE.DirectionalLight(0xffffff, 1.0); fill.position.set(-300, 100, -300); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 1.2); rim.position.set(-100, 300, 400); scene.add(rim);
+  const root = new THREE.Group(); root.rotation.x = -Math.PI/2; scene.add(root);   // OpenSCAD Z-up -> three Y-up
+  const st = v.state;
+  const clip = v.cut ? [new THREE.Plane(new THREE.Vector3(0,0,-1), 0)] : [];       // cut away the +y half (scene z after rotation)
+  const parts = [
+    ['body', silver()], [`sleeve_${st}`, silver()], [`clip_${st}`, silver()], ['bottom_cap', silver()],
+    ['knurl_nut', silver()], ['window_panel', silver()], ['led_mount', black()],
+    ['btn_minutes', black()], [v.flash?'btn_hours_pressed':'btn_hours', black()], ['btn_weeks', black()],
+    ['red_band', glass(v.lit, 0xff1a0a)], ['dome', glass(v.flash, 0xfffbf0)]];
+  if (v.cut) parts.push(['cells', inner()], ['battery_spring', new THREE.MeshStandardMaterial({color:0xffa040})],
+      ['push_switch', new THREE.MeshStandardMaterial({color:0x333333})], ['led_red', new THREE.MeshStandardMaterial({color:0xff2020, emissive:0x600000})],
+      ['led_white', new THREE.MeshStandardMaterial({color:0xffffff})]);
+  const EX = v.explode ? {bottom_cap:-125, battery_spring:-10, knurl_nut:30, led_mount:52, red_band:66, dome:82} : {};
+  const EXX = v.explode ? {window_panel:34, btn_minutes:17, btn_hours:17, btn_weeks:17} : {};
+  const EXY = v.explode ? {[`clip_${st}`]:-22} : {};
+  for (const [n, mat] of parts){
+    const g = await geo(n);
+    mat.clippingPlanes = clip; mat.clipShadows = true; mat.side = THREE.DoubleSide;
+    const m = new THREE.Mesh(g, mat);
+    m.position.set(EXX[n]||0, EXY[n]||0, EX[n]||0);
+    if (v.explode && n.startsWith('sleeve')) m.position.z = -95;
+    if (v.explode && n.startsWith('clip')) m.position.z = -95;
+    root.add(m);
+  }
+  if (v.lit){ const pl = new THREE.PointLight(0xff2010, 30000, 60, 2); pl.position.set(0, 165, 0); scene.add(pl); }
+  if (v.flash){ const pl = new THREE.PointLight(0xffffff, 60000, 90, 2); pl.position.set(0, 180, 0); scene.add(pl); }
+  const cam = new THREE.PerspectiveCamera(v.fov||20, W/H, 1, 5000);
+  const t = new THREE.Vector3(...(v.target||[0, 88, 0]));
+  const yaw = (v.yaw ?? 25)*Math.PI/180, pitch = (v.pitch ?? 8)*Math.PI/180, d = v.dist||640;
+  cam.position.set(t.x + d*Math.cos(pitch)*Math.cos(yaw), t.y + d*Math.sin(pitch), t.z - d*Math.cos(pitch)*Math.sin(yaw));
+  cam.lookAt(t);
+  r.render(scene, cam);
+  done++;
+}
+window.READY = true;
+</script></body></html>

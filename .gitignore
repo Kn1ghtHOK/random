@@ -1,0 +1,5 @@
+neuralizer/build/
+neuralizer/logs/
+neuralizer/tools/render/node_modules
+neuralizer/tools/render/asm
+__pycache__/
