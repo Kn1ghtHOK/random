@@ -258,6 +258,11 @@ if __name__ == "__main__":
     ap.add_argument("--profiles"); ap.add_argument("--thumbs"); ap.add_argument("--layout-json")
     a = ap.parse_args()
     cfg = build_project_settings(a.profiles) if a.profiles else json.loads(CACHE.read_text())
+    # Bambu Studio checks filament_extruder_variant against filament_self_index (one entry per
+    # filament variant). A missing filament_self_index defaults to [1], so a 3-filament project
+    # without it is rejected with "Invalid configuration file" (PresetBundle::load_config_file_config).
+    nfil = len(cfg["filament_colour"])
+    cfg["filament_self_index"] = [str(i + 1) for i in range(nfil)]
     plates = plan()
     if a.layout_json:   # for the plate thumbnail renderer: centred meshes + positions
         md = ROOT / "build" / "plate_meshes"; md.mkdir(parents=True, exist_ok=True)

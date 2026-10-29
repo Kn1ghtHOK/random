@@ -56,6 +56,10 @@ nfil = len(cfg["filament_colour"])
 bad_len = [k for k, v in cfg.items() if k.startswith("filament_") and isinstance(v, list) and len(v) not in (nfil, 2 * nfil, nfil * nfil)
            and k not in ("filament_map",)]
 check(not bad_len, f"every per-filament option has {nfil} entries ({sum(1 for k in cfg if k.startswith('filament_'))} filament options)")
+if "extruder_variant_list" in cfg:   # PresetBundle::load_config_file_config -> "Invalid configuration file" otherwise
+    fev, fsi = cfg.get("filament_extruder_variant", []), cfg.get("filament_self_index", ["1"])
+    check(len(fev) == len(fsi) and len(fev) >= nfil,
+          f"filament_extruder_variant ({len(fev)}) and filament_self_index ({len(fsi)}) match the {nfil} filaments (Bambu rejects the file otherwise)")
 
 # option keys known to PrintConfig (from Bambu source if available)
 src = pathlib.Path("/home/user/bambulab/bambustudio/src/libslic3r/PrintConfig.cpp")

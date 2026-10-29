@@ -141,7 +141,8 @@ PASS  lib3mf strict read top_cap.3mf: 1 build items, 21250 triangles, 0 warnings
 PASS  lib3mf strict read window_panel.3mf: 1 build items, 31244 triangles, 0 warnings
 PASS  Application tag ['BambuStudio-02.08.04.57'] -> Bambu Studio opens it as a PROJECT (plates + filaments), not geometry only
 PASS  project config: printer Bambu Lab P1S 0.4 nozzle, process 0.16mm Optimal @BBL X1C, filaments ['Generic PETG', 'Generic PETG', 'Generic PETG'] colours ['#F2F2F2', '#161616', '#D6EAF2']
-PASS  every per-filament option has 3 entries (75 filament options)
+PASS  every per-filament option has 3 entries (76 filament options)
+PASS  filament_extruder_variant (3) and filament_self_index (3) match the 3 filaments (Bambu rejects the file otherwise)
 PASS  every <part> in model_settings matches a component of its object (Bambu maps parts by sub-object id)
 PASS  all extruder assignments are within the 3 filament slots
 PASS  all per-object setting keys exist in Bambu's PrintConfig
