@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Exports every part (plus dummy cells/LEDs/switches) in ASSEMBLY coordinates
-# for the open and closed sleeve states.  Used by tools/verify.py.
+# for the open and closed sleeve states.  Used by tools/verify.py and the renderer.
 set -e
-# optional: BATTERY=AAAx3 tools/...  to build another battery variant
 BOPT=()
 [ -n "$BATTERY" ] && BOPT=(-D "battery=\"$BATTERY\"")
 cd "$(dirname "$0")/.."
-OUT=build/assembled; mkdir -p $OUT logs
-STATIC="body bottom_cap battery_spring knurl_nut led_mount light_window dome window_panel panel_detail_zone btn_minutes btn_hours btn_hours_pressed btn_weeks cells push_switch fallback_switch led_red led_white tape_body tape_cap tape_bump_open tape_bump_closed"
+OUT=build/assembled; rm -rf $OUT; mkdir -p $OUT logs
+STATIC="body bottom_cap sled top_cap top_cap_zone window_panel panel_detail_zone btn_hours btn_hours_pressed btn_zone cells s2_switch s1_switch led_red led_white"
 for p in $STATIC; do
   openscad "${BOPT[@]}" -o $OUT/$p.stl -D "part=\"$p\"" -D 'pose="assembled"' neuralizer.scad > logs/asm_$p.log 2>&1 &
 done
@@ -16,11 +15,9 @@ for st in open closed; do for p in sleeve clip; do
 done; done
 wait
 python3 - <<'PY'
-import trimesh, numpy as np, manifold3d as mf
-d = "build/assembled"
-M = lambda t: mf.Manifold(mf.Mesh(vert_properties=np.asarray(t.vertices, np.float32), tri_verts=np.asarray(t.faces, np.uint32)))
-P, Z = M(trimesh.load(f"{d}/window_panel.stl", force="mesh")), M(trimesh.load(f"{d}/panel_detail_zone.stl", force="mesh"))
-for name, r in (("window_panel_base", P - Z), ("window_panel_details", P ^ Z)):
-    r = sum((c for c in r.decompose() if c.volume() > 0.01), mf.Manifold()); o = r.to_mesh(); trimesh.Trimesh(o.vert_properties[:, :3], o.tri_verts).export(f"{d}/{name}.stl")
+import glob, trimesh
+for f in glob.glob("build/assembled/*.stl"):
+    trimesh.load(f, force="mesh").export(f)
 PY
+python3 tools/split_colours.py $OUT
 ls $OUT | wc -l

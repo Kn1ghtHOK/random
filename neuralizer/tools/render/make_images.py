@@ -11,17 +11,19 @@ IMG = ROOT / "images"; (IMG / "assembly").mkdir(parents=True, exist_ok=True)
 SC = ROOT / "build" / "scenes"; SC.mkdir(parents=True, exist_ok=True)
 THUMBS = ROOT / "build" / "thumbs"; THUMBS.mkdir(parents=True, exist_ok=True)
 P = json.loads((ROOT / "build/params.echo").read_text().split("PARAMS ", 1)[1].rsplit('"', 1)[0].replace('\\"', '"'))
-ZT, WIN = P["Zt"], P["Zt"] + P["z_nut_top"] + 2.5          # window centre height
+ZT, WIN = P["Zt"], (P["z_win_bot"] + P["z_win_top"]) / 2      # light-ring centre height
+ZW0, ZW1, HZ = P["Zw0"], P["Zw1"], P["Zw1"] - 22.5               # window, HOURS switch
 
 def A(name, mat, **kw): return {"file": f"asm/{name}.stl", "mat": mat, **kw}
+TOPCAP = lambda lit="off": [A("top_cap_clear", {"off": "clear", "red": "clear_red", "white": "clear_white"}[lit]), A("top_cap_white", "white")]
+PANEL = [A("window_panel_base", "white"), A("window_panel_details", "black")]
 def finished(state="open", lit="off", panel=True, skip=()):
-    win = {"off": "clear", "red": "clear_red", "white": "clear_white"}[lit]
-    parts = [A("body", "silver"), A(f"sleeve_{state}", "silver"), A(f"clip_{state}", "silver"), A("bottom_cap", "silver"),
-             A("knurl_nut", "silver"), A("dome", "silver"), A("led_mount", "white"), A("light_window", win),
-             A("btn_minutes", "black"), A("btn_hours_pressed" if lit == "white" else "btn_hours", "black"), A("btn_weeks", "black")]
+    parts = [A("body", "silver"), A(f"sleeve_{state}", "silver"), A(f"clip_{state}", "silver"), A("bottom_cap", "silver")] + TOPCAP(lit)
     if panel:
-        parts += [A("window_panel_base", "white"), A("window_panel_details", "black")]
+        parts += PANEL + ([A("btn_hours_pressed", "black")] if lit == "white" else [A("btn_hours_base", "white"), A("btn_hours_top", "black")])
     return [p for p in parts if not any(s in p["file"] for s in skip)]
+ELEC = [A("cells", "grey"), A("s1_switch", "black"), A("s2_switch", "black"), A("led_red", "led_red"), A("led_white", "led_white")]
+SLED = [A("sled", "white")] + ELEC
 def glow(lit):
     if lit == "red": return [{"color": 0xff2010, "i": 26000, "pos": [0, 0, WIN]}]
     if lit == "white": return [{"color": 0xff2010, "i": 16000, "pos": [0, 0, WIN]}, {"color": 0xffffff, "i": 60000, "pos": [0, 0, WIN]}]
@@ -36,39 +38,39 @@ def render(name, scene, out):
         print(name, r.stdout, r.stderr[-2000:])
     print("rendered", out.relative_to(ROOT))
 
-FULL = cam([0, 0, 92], -22, 6, 700)
+FULL = cam([0, 0, 100], -22, 6, 760)
 jobs = {}
 # ----------------------------------------------------------------- previews
 jobs["preview"] = ({"h": 1150, "views": [
-    {"caption": "CLOSED", "sub": "sleeve up: window covered, lights off", "meshes": finished("closed"), "camera": FULL},
-    {"caption": "OPEN", "sub": "sleeve down: red light in the window = ready", "meshes": finished("open", "red"), "lights": glow("red"), "camera": FULL},
-    {"caption": "OPEN + HOURS PRESSED", "sub": "white flash through the same window", "meshes": finished("open", "white"), "lights": glow("white"), "camera": FULL}]},
+    {"caption": "CLOSED", "sub": "a plain fluted tube: panel and light ring hidden", "meshes": finished("closed"), "camera": FULL},
+    {"caption": "OPEN", "sub": "sleeve down: panel + clear ring show, red = ready", "meshes": finished("open", "red"), "lights": glow("red"), "camera": FULL},
+    {"caption": "OPEN + HOURS PRESSED", "sub": "white flash through the same ring", "meshes": finished("open", "white"), "lights": glow("white"), "camera": FULL}]},
     IMG / "preview_closed_open.png")
-TOP = cam([0, 0, WIN - 8], -20, 8, 250)
+TOP = cam([0, 0, WIN - 6], -20, 8, 250)
 jobs["top"] = ({"h": 700, "views": [
-    {"caption": "LIGHTS OFF", "sub": "white dome, clear window, knurled nut", "meshes": finished("open"), "camera": TOP, "w": 420},
+    {"caption": "CLOSED", "sub": "sleeve covers the clear ring", "meshes": finished("closed"), "camera": TOP, "w": 420},
     {"caption": "READY (RED)", "sub": "sleeve open", "meshes": finished("open", "red"), "lights": glow("red"), "camera": TOP, "w": 420},
     {"caption": "FLASH (WHITE)", "sub": "HOURS pressed", "meshes": finished("open", "white"), "lights": glow("white"), "camera": TOP, "w": 420},
-    {"caption": "INSIDE", "sub": "both LEDs shine into one window; the dome's cone reflects light outward",
-     "meshes": finished("open", "red") + [A("led_red", "led_red"), A("led_white", "led_white")], "lights": glow("red"), "cut": True,
-     "camera": cam([0, 0, WIN - 4], -90, 4, 230), "w": 420}]}, IMG / "top_window.png")
+    {"caption": "INSIDE", "sub": "both LEDs shine into the clear ring; white dome above, white body below",
+     "meshes": finished("open", "red") + SLED, "lights": glow("red"), "cut": True,
+     "camera": cam([0, 0, WIN - 6], -90, 4, 230), "w": 420}]}, IMG / "top_window.png")
 jobs["window_back"] = ({"h": 1000, "views": [
-    {"caption": "WINDOW CLOSE-UP", "sub": "multicolour panel: white with black labels (AMS)", "meshes": finished("open", "red"), "lights": glow("red"),
-     "camera": cam([0, 0, 128], 0, 0, 330), "w": 560},
-    {"caption": "BACK: SLEEVE SWITCH", "sub": "key channel + copper pads; the finger hides in two flutes",
-     "meshes": finished("open") + [A("tape_body", "copper")], "camera": cam([0, 0, 105], 180, 5, 330), "w": 560}]}, IMG / "window_and_back.png")
-EX = {"bottom_cap": [0, 0, -120], "knurl_nut": [0, 0, 26], "led_mount": [0, 0, 44], "light_window": [0, 0, 60], "dome": [0, 0, 78],
-      "window_panel_base": [34, 0, 0], "window_panel_details": [34, 0, 0], "btn_minutes": [17, 0, 0], "btn_hours": [17, 0, 0], "btn_weeks": [17, 0, 0],
-      "sleeve_open": [0, 0, -92], "clip_open": [0, -22, -92]}
-jobs["exploded"] = ({"h": 1400, "views": [{"caption": "EXPLODED VIEW", "sub": "dome, light window, LED head, knurled nut; panel + 3 buttons; sleeve + clip; bottom cap",
-    "meshes": [dict(m, pos=EX.get(pathlib.Path(m["file"]).stem, [0, 0, 0])) for m in finished("open")], "w": 900,
-    "camera": cam([0, 0, 70], -35, 10, 1350)}]}, IMG / "exploded.png")
+    {"caption": "WINDOW CLOSE-UP", "sub": "multicolour panel + HOURS button (AMS)", "meshes": finished("open", "red"), "lights": glow("red"),
+     "camera": cam([0, 0, (ZW0 + ZW1) / 2], 0, 0, 380), "w": 560},
+    {"caption": "BACK: SLEEVE SWITCH", "sub": "the sleeve's finger presses a flexing tongue onto switch S1",
+     "meshes": finished("open"), "camera": cam([0, 0, 90], 180, 5, 330), "w": 560}]}, IMG / "window_and_back.png")
+EX = {"bottom_cap": [0, 0, -40], "top_cap_clear": [0, 0, 150], "top_cap_white": [0, 0, 150],
+      "window_panel_base": [34, 0, 0], "window_panel_details": [34, 0, 0], "btn_hours_base": [20, 0, 0], "btn_hours_top": [20, 0, 0],
+      "sleeve_open": [0, 0, -70], "clip_open": [0, -22, -70]}
+EXS = [0, 0, 120]   # sled lifted out of the top
+jobs["exploded"] = ({"h": 1400, "views": [{"caption": "EXPLODED VIEW", "sub": "8 printed parts: top cap, sled (all electronics), body, panel + HOURS, sleeve, clip, bottom cap",
+    "meshes": [dict(m, pos=EX.get(pathlib.Path(m["file"]).stem, [0, 0, 0])) for m in finished("open")] + [dict(m, pos=EXS) for m in SLED], "w": 900,
+    "camera": cam([0, 0, 130], -35, 10, 1700)}]}, IMG / "exploded.png")
 CUT = lambda t, d: cam([0, 0, t], -90, 0, d, 18)
-inside = [A("cells", "grey"), A("battery_spring", "orange"), A("push_switch", "black"), A("led_red", "led_red"), A("led_white", "led_white"), A("tape_body", "copper", nocut=True), A("tape_cap", "copper")]
 jobs["cutaway"] = ({"h": 1100, "views": [
-    {"caption": "CUTAWAY (OPEN)", "sub": "cells, spring, switch, LEDs, wire channel", "meshes": finished("open", "red") + inside, "cut": True, "lights": glow("red"), "camera": CUT(85, 700)},
-    {"caption": "LED HEAD", "sub": "LEDs side by side under the clear window", "meshes": finished("open", "red") + inside, "cut": True, "lights": glow("red"), "camera": CUT(160, 160)},
-    {"caption": "BATTERY BAY", "sub": "3× LR44, printed spring, copper contacts", "meshes": finished("open") + inside, "cut": True, "camera": CUT(12, 200)}]},
+    {"caption": "CUTAWAY (OPEN)", "sub": "the sled carries everything: LEDs, HOURS switch, cells, sleeve switch", "meshes": finished("open", "red") + SLED, "cut": True, "lights": glow("red"), "camera": CUT(100, 760)},
+    {"caption": "TOP", "sub": "LED head clamped by the top cap; HOURS button on S2", "meshes": finished("open", "red") + SLED, "cut": True, "lights": glow("red"), "camera": CUT(162, 180)},
+    {"caption": "BOTTOM", "sub": "sleeve finger → tongue → S1", "meshes": finished("open") + SLED, "cut": True, "camera": CUT(78, 180)}]},
     IMG / "cutaway.png")
 
 # ----------------------------------------------------------------- assembly steps
@@ -78,46 +80,35 @@ def step(n, title, sub, views):
 body = [A("body", "silver")]
 HL = "orange"
 S = {}
-S[2] = step(2, "LED head", "drop both LEDs (with resistor + wires) into the white LED head",
-            [{"meshes": [A("led_mount", "white"), A("led_red", "led_red"), A("led_white", "led_white")], "cut": True, "camera": cam([0, 0, ZT + 1], -60, 18, 150), "w": 560},
-             {"meshes": [A("led_mount", "white"), A("led_red", "led_red"), A("led_white", "led_white")], "camera": cam([0, 0, ZT + 2], -30, 35, 150), "w": 460}])
-S[3] = step(3, "Battery spring + B+ contact", "spring up into the bay (boss down), copper strip on the 45° cone",
-            [{"meshes": body + [A("battery_spring", HL), A("tape_body", "copper", nocut=True)], "cut": True, "camera": CUT(16, 170), "w": 560},
-             {"meshes": body + [A("battery_spring", HL), A("tape_body", "copper")], "camera": cam([0, 0, 5], -30, -45, 160), "w": 460}])
-S[4] = step(4, "Sleeve-switch pads", "two 1.8 mm copper strips in the recesses on the contact land (back)",
-            [{"meshes": body + [A("tape_body", "copper")], "camera": cam([0, 0, 74], 180, 10, 140), "w": 560},
-             {"meshes": body + [A("tape_body", "copper")], "camera": cam([0, 0, 90], 160, 8, 420), "w": 460}])
-S[5] = step(5, "HOURS switch", "6×6 switch, plunger out, into the pocket behind the middle hole",
-            [{"meshes": body + [A("push_switch", HL)], "camera": cam([0, 0, 127], 15, 10, 150), "w": 560},
-             {"meshes": body + [A("push_switch", HL)], "cut": True, "camera": CUT(127, 150), "w": 460}])
-S[6] = step(6, "Buttons + window panel", "buttons in from behind, bottom tongue into its slot, lay the panel flat",
-            [{"meshes": body + [A("push_switch", "black"), A("btn_minutes", HL, pos=[10, 0, 0]), A("btn_hours", HL, pos=[10, 0, 0]), A("btn_weeks", HL, pos=[10, 0, 0]),
-                                A("window_panel_base", "white", pos=[22, 0, 0]), A("window_panel_details", "black", pos=[22, 0, 0])],
-              "camera": cam([10, 0, 118], 40, 8, 380), "w": 560},
-             {"meshes": body + [A("btn_minutes", "black"), A("btn_hours", "black"), A("btn_weeks", "black"), A("window_panel_base", "white"), A("window_panel_details", "black")],
-              "camera": cam([0, 0, 118], 0, 0, 360), "w": 460}])
-done_win = [A("btn_minutes", "black"), A("btn_hours", "black"), A("btn_weeks", "black"), A("window_panel_base", "white"), A("window_panel_details", "black")]
-S[7] = step(7, "LED head + knurled nut", "LED head into the keyed socket, then screw the nut down to clamp it",
-            [{"meshes": body + done_win + [A("led_mount", "white"), A("knurl_nut", HL, pos=[0, 0, 14])], "camera": cam([0, 0, ZT], -25, 15, 200), "w": 560},
-             {"meshes": body + done_win + [A("led_mount", "white"), A("knurl_nut", HL)], "camera": cam([0, 0, ZT], -25, 15, 200), "w": 460}])
-S[8] = step(8, "Light window + dome", "push the clear window into the nut, press the dome onto it",
-            [{"meshes": body + done_win + [A("led_mount", "white"), A("knurl_nut", "silver"), A("light_window", "clear", pos=[0, 0, 10]), A("dome", HL, pos=[0, 0, 22])],
-              "camera": cam([0, 0, ZT + 14], -25, 12, 230), "w": 560},
-             {"meshes": body + done_win + [A("led_mount", "white"), A("knurl_nut", "silver"), A("light_window", "clear"), A("dome", "silver")],
-              "camera": cam([0, 0, ZT + 6], -25, 12, 200), "w": 460}])
-top_done = done_win + [A("led_mount", "white"), A("knurl_nut", "silver"), A("light_window", "clear"), A("dome", "silver")]
-S[9] = step(9, "Sleeve + clip", "copper tape on the finger bump, slide on from the bottom until it clicks, snap on the clip",
-            [{"meshes": body + top_done + [A("sleeve_open", HL, pos=[0, 0, -60]), A("tape_bump_open", "copper", pos=[0, 0, -60]), A("clip_open", "silver", pos=[0, -12, -60])],
-              "camera": cam([0, 0, 50], 200, 10, 700), "w": 560},
-             {"meshes": body + top_done + [A("sleeve_open", "silver"), A("clip_open", HL)], "camera": cam([0, 0, 40], -70, 5, 380), "w": 460}])
-S[10] = step(10, "Batteries + bottom cap", "3× LR44 flat (+) side down, copper disc on the cap face, screw the cap home",
-             [{"meshes": finished("open", skip=("bottom_cap",)) + [A("cells", "grey", pos=[0, 0, -26]), A("tape_cap", "copper", pos=[0, 0, -42]), A("bottom_cap", HL, pos=[0, 0, -42])],
-               "camera": cam([0, 0, -10], -25, 5, 380), "w": 560},
-              {"meshes": finished("open") + [A("cells", "grey"), A("tape_cap", "copper")], "cut": True, "camera": CUT(14, 180), "w": 460}])
-S[11] = step(11, "Test", "slide open: red. Press HOURS: white flash. Close: off.",
-             [{"meshes": finished("open", "red"), "lights": glow("red"), "camera": cam([0, 0, 125], -20, 6, 420), "w": 340, "caption": "open = red"},
-              {"meshes": finished("open", "white"), "lights": glow("white"), "camera": cam([0, 0, 125], -20, 6, 420), "w": 340, "caption": "HOURS = white"},
-              {"meshes": finished("closed"), "camera": cam([0, 0, 125], -20, 6, 420), "w": 340, "caption": "closed = off"}])
+SIDE = lambda z, d: cam([0, 0, z], -60, 12, d)
+S[1] = step(1, "Sleeve, clip, bottom cap", "sleeve on from the bottom (finger at the back) until it clicks; snap on the clip; screw on the cap",
+            [{"meshes": body + [A("sleeve_open", HL, pos=[0, 0, -60]), A("clip_open", "silver", pos=[0, -14, -60]), A("bottom_cap", "silver", pos=[0, 0, -90])],
+              "camera": cam([0, 0, 60], 200, 10, 760), "w": 560},
+             {"meshes": body + [A("sleeve_closed", "silver"), A("clip_closed", HL), A("bottom_cap", "silver")], "camera": cam([0, 0, 120], -70, 5, 520), "w": 460}])
+S[2] = step(2, "Window panel + HOURS button", "slide the sleeve down; button into the panel's back; top tongue in first, lay flat, push down 2 mm: click",
+            [{"meshes": body + [A("sleeve_open", "silver"), A("btn_hours_base", HL, pos=[14, 0, 2]), A("btn_hours_top", HL, pos=[14, 0, 2]),
+                                A("window_panel_base", "white", pos=[24, 0, 2]), A("window_panel_details", "black", pos=[24, 0, 2])],
+              "camera": cam([10, 0, ZW0 + 36], 40, 8, 420), "w": 560},
+             {"meshes": body + [A("sleeve_open", "silver")] + PANEL + [A("btn_hours_base", "white"), A("btn_hours_top", "black")],
+              "camera": cam([0, 0, ZW0 + 36], 0, 0, 400), "w": 460}])
+S[3] = step(3, "Wire the sled", "both switches + both LEDs click into the sled; solder 7 joints on the bench (see wiring.svg)",
+            [{"meshes": SLED[:1] + SLED[2:], "camera": cam([0, 0, 125], -55, 14, 440), "w": 560},
+             {"meshes": SLED[:1] + SLED[2:], "camera": cam([0, 0, 165], 120, 20, 200), "w": 460, "caption": "LED head"}])
+S[4] = step(4, "Batteries", "3× LR44, + toward the LEDs, snap in between the springy bulkheads",
+            [{"meshes": [A("sled", "white"), A("cells", HL)] + ELEC[1:], "camera": cam([0, 0, 128], -55, 14, 330), "w": 560},
+             {"meshes": [A("sled", "white"), A("cells", HL, pos=[14, 0, 0])] + ELEC[1:], "camera": cam([0, 0, 128], -20, 10, 330), "w": 460}])
+S[5] = step(5, "Sled into the body", "close the sleeve, then slide the sled in from the top - it only fits one way round",
+            [{"meshes": finished("closed", panel=True, skip=("top_cap",)) + [dict(m, pos=[0, 0, 70], mat=HL if m["file"].endswith("sled.stl") else m["mat"]) for m in SLED],
+              "camera": cam([0, 0, 150], -40, 10, 900), "w": 560},
+             {"meshes": finished("closed", skip=("top_cap",)) + SLED, "cut": True, "camera": CUT(130, 560), "w": 460}])
+S[6] = step(6, "Top cap", "screw the clear/white top cap on hand-tight: it clamps the sled",
+            [{"meshes": finished("closed", skip=("top_cap",)) + [dict(m, pos=[0, 0, 22], mat=HL if "white" in m["file"] else m["mat"]) for m in TOPCAP()],
+              "camera": cam([0, 0, ZT + 6], -25, 12, 260), "w": 560},
+             {"meshes": finished("closed"), "camera": cam([0, 0, ZT], -25, 12, 260), "w": 460}])
+S[7] = step(7, "Test", "slide open: red. Press HOURS: white flash. Close: off.",
+            [{"meshes": finished("open", "red"), "lights": glow("red"), "camera": cam([0, 0, 140], -20, 6, 520), "w": 340, "caption": "open = red"},
+             {"meshes": finished("open", "white"), "lights": glow("white"), "camera": cam([0, 0, 140], -20, 6, 520), "w": 340, "caption": "HOURS = white"},
+             {"meshes": finished("closed"), "camera": cam([0, 0, 140], -20, 6, 520), "w": 340, "caption": "closed = off"}])
 for k, v in S.items(): jobs[f"step{k}"] = v
 
 # ----------------------------------------------------------------- plates (3MF thumbnails + overview)
@@ -137,7 +128,7 @@ try:
             render(k, scene, out)
 finally:
     srv.terminate()
-# plates overview (5 thumbnails + names)
+# plates overview (thumbnails + names)
 if not only or any(o.startswith("plate") for o in only):
     from PIL import ImageDraw, ImageFont
     font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 18)

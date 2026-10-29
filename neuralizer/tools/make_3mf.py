@@ -2,9 +2,9 @@
 """
 Builds the Bambu Studio project and per-part 3MF files from stl/ (print orientation).
 
-  3mf/neuralizer_P1S_PETG_project.3mf   Bambu Studio project: 5 plates, 3 filament slots
+  3mf/neuralizer_P1S_PETG_project.3mf   Bambu Studio project: 4 plates, 3 filament slots
                                         (1 white, 2 black, 3 clear PETG), per-object print
-                                        settings, multicolour window panel (AMS)
+                                        settings, multicolour panel, button and top cap (AMS)
   3mf/parts/<part>.3mf                  one plain 3MF per part (any slicer), with colour
                                         and the same per-object settings
 
@@ -40,28 +40,26 @@ S_SOLID = {"layer_height": "0.12", "wall_loops": "2", "sparse_infill_density": "
 PARTS = {   # name: (filament, settings, rotate_z_deg)
     "body":           (W, {**S_STRUCT, "brim_type": "outer_only", "brim_width": "5"}, -90),
     "sleeve":         (W, {**S_STRUCT, "wall_loops": "3", "brim_type": "outer_only", "brim_width": "3"}, -90),
+    "sled":           (W, {**S_FINE, "layer_height": "0.16", "wall_loops": "3", "brim_type": "outer_only", "brim_width": "3"}, 0),
     "bottom_cap":     (W, S_FINE, 0),
-    "knurl_nut":      (W, S_FINE, 0),
-    "dome":           (W, {**S_FINE, "layer_height": "0.16"}, 0),
-    "led_mount":      (W, {**S_FINE, "wall_loops": "3"}, 0),
     "clip":           (W, {**S_SOLID, "wall_loops": "3"}, 0),
-    "battery_spring": (W, S_SOLID, 0),
     "window_panel":   (W, {"layer_height": "0.12", "wall_loops": "3", "sparse_infill_density": "100%",
                            "top_surface_pattern": "monotonicline"}, 0),
-    "btn_minutes":    (B, S_SOLID, 0),
-    "btn_hours":      (B, S_SOLID, 0),
-    "btn_weeks":      (B, S_SOLID, 0),
-    "light_window":   (C, {"layer_height": "0.16", "wall_loops": "2", "sparse_infill_density": "100%",
+    "btn_hours":      (W, S_SOLID, 0),
+    "top_cap":        (C, {"layer_height": "0.16", "wall_loops": "3", "sparse_infill_density": "100%",
                            "sparse_infill_pattern": "zig-zag"}, 0),
     "fit_test":       (W, {"layer_height": "0.16", "wall_loops": "3", "sparse_infill_density": "15%"}, 0),
     "thread_test":    (W, {"layer_height": "0.12", "wall_loops": "4", "sparse_infill_density": "30%"}, 0),
 }
+# multicolour objects: one volume per colour (exact splits made by tools/split_colours.py)
+MULTI = {"window_panel": [("panel (white)", W, "window_panel_base"), ("labels + plates (black)", B, "window_panel_details")],
+         "btn_hours":    [("button (white)", W, "btn_hours_base"), ("top (black)", B, "btn_hours_top")],
+         "top_cap":      [("spigot + light ring (clear)", C, "top_cap_clear"), ("dome (white)", W, "top_cap_white")]}
 PLATES = [
     ("1 - Test prints - print first (white)", ["fit_test", "thread_test"]),
-    ("2 - White parts", ["body", "sleeve", "bottom_cap", "knurl_nut", "dome", "led_mount", "clip", "battery_spring"]),
-    ("3 - Window panel - AMS white + black", ["window_panel"]),
-    ("4 - Black buttons", ["btn_minutes", "btn_hours", "btn_weeks"]),
-    ("5 - Clear light window", ["light_window"]),
+    ("2 - White parts", ["body", "sleeve", "sled", "bottom_cap", "clip"]),
+    ("3 - Window panel + HOURS button - AMS white + black", ["window_panel", "btn_hours"]),
+    ("4 - Top cap - AMS clear + white", ["top_cap"]),
 ]
 
 # ------------------------------------------------------------------ project config
@@ -100,7 +98,7 @@ def build_project_settings(profiles):
         "filament_colour": [c for _, c in FILAMENTS], "filament_map": ["1"] * n,
         "inherits_group": [""] * (n + 2), "different_settings_to_system": [""] * (n + 2),
         "curr_bed_type": "Textured PEI Plate",
-        # purge volumes (mm^3) from row -> to column; white<->black is the only change used (plate 3)
+        # purge volumes (mm^3) from row -> to column; used: white<->black (plate 3), clear->white (plate 4)
         "flush_volumes_matrix": ["0", "160", "280", "560", "0", "620", "240", "160", "0"],
         "flush_volumes_vector": ["140"] * (2 * n), "flush_multiplier": "1",
     })
@@ -111,9 +109,8 @@ def build_project_settings(profiles):
 # ------------------------------------------------------------------ geometry
 def load_part(name):
     """returns list of (volume_name, filament, mesh) in print orientation, xy-centred, on z=0"""
-    if name == "window_panel":
-        vols = [("panel (white)", W, trimesh.load(STL / "window_panel_base.stl", force="mesh")),
-                ("labels + plates (black)", B, trimesh.load(STL / "window_panel_details.stl", force="mesh"))]
+    if name in MULTI:
+        vols = [(vn, fil, trimesh.load(STL / f"{f}.stl", force="mesh")) for vn, fil, f in MULTI[name]]
     else:
         vols = [(name, PARTS[name][0], trimesh.load(STL / f"{name}.stl", force="mesh"))]
     rz = math.radians(PARTS[name][2])
@@ -273,11 +270,6 @@ if __name__ == "__main__":
                     fn = md / f"{o}_{k}.stl"; m.export(fn); vols.append({"file": f"plate_meshes/{o}_{k}.stl", "fil": fil})
                 jo.append({"name": o, "pos": p, "vols": vols})
             js.append({"name": pn, "objects": jo})
-        pathlib.Path(a.layout_json).write_text(json.dumps(js, indent=1))
-    if False:
-        js = [{"name": pn, "objects": [{"name": o, "pos": p, "rot": PARTS[o][2],
-               "vols": [{"file": ("window_panel_base" if (o == "window_panel" and k == 0) else "window_panel_details" if o == "window_panel" else o),
-                         "fil": fil} for k, (vn, fil, m) in enumerate(v)]} for o, s, v, p in objs]} for pn, objs in plates]
         pathlib.Path(a.layout_json).write_text(json.dumps(js, indent=1))
     OUT.mkdir(exist_ok=True); (OUT / "parts").mkdir(exist_ok=True)
     thumbs = pathlib.Path(a.thumbs) if a.thumbs else None

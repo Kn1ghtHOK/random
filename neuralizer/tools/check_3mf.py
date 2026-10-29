@@ -93,7 +93,7 @@ def sub_meshes(oid):
     return out
 
 plates = ms.findall("plate")
-check(len(plates) == 5, f"{len(plates)} plates defined: " + "; ".join(p.find("metadata[@key='plater_name']").get("value") for p in plates))
+check(len(plates) == 4, f"{len(plates)} plates defined: " + "; ".join(p.find("metadata[@key='plater_name']").get("value") for p in plates))
 for pi, p in enumerate(plates):
     ox, oy = (pi % 3) * 307.2, -(pi // 3) * 307.2
     boxes, names, fils = [], [], set()
@@ -115,7 +115,8 @@ stl = ROOT / "stl"
 for oid, o in obj_cfg.items():
     name = o.find("metadata[@key='name']").get("value")
     ms_ = sub_meshes(oid)
-    ref = ["window_panel_base", "window_panel_details"] if name == "window_panel" else [name]
+    ref = {"window_panel": ["window_panel_base", "window_panel_details"], "btn_hours": ["btn_hours_base", "btn_hours_top"],
+           "top_cap": ["top_cap_clear", "top_cap_white"]}.get(name, [name])
     ok = True
     for m, r in zip(ms_, ref):
         R = trimesh.load(stl / f"{r}.stl", force="mesh")
