@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1560" height="860" viewBox="0 0 1560 860" font-family="Helvetica, Arial, sans-serif">
   <rect width="1560" height="860" fill="#f6f6f4"/>
   <text x="40" y="50" font-size="28" font-weight="700" fill="#111">Neuralizer wiring (default: 3 × LR44 = 4.5 V)</text>
-  <text x="40" y="80" font-size="17" fill="#444">Sleeve switch S1 (6×6 tactile on the sled) → node N → red LED always, white LED only while HOURS (S2) is pressed.</text>
+  <text x="40" y="80" font-size="17" fill="#444">Sleeve switch S1 (lever microswitch, COM + NO) → node N → red LED always, white LED only while HOURS (S2) is pressed.</text>
 
   <!-- ===================== SCHEMATIC ===================== -->
   <g stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -42,9 +42,9 @@
     <rect x="300" y="150" width="80" height="40" rx="6" fill="#f2d3b3" stroke="#a0522d" stroke-width="2"/>
     <text x="340" y="176" font-size="15" text-anchor="middle" fill="#5a2d0c" font-weight="700">S1</text>
     <text x="340" y="135" font-size="14" text-anchor="middle" fill="#333">sleeve switch</text>
-    <text x="340" y="215" font-size="12" text-anchor="middle" fill="#555">6×6 tactile at the sled foot,</text>
-    <text x="340" y="230" font-size="12" text-anchor="middle" fill="#555">pressed through the body's</text>
-    <text x="340" y="245" font-size="12" text-anchor="middle" fill="#555">flexing tongue by the sleeve</text>
+    <text x="340" y="215" font-size="12" text-anchor="middle" fill="#555">lever microswitch, COM + NO,</text>
+    <text x="340" y="230" font-size="12" text-anchor="middle" fill="#555">at the sled foot; the sleeve</text>
+    <text x="340" y="245" font-size="12" text-anchor="middle" fill="#555">presses it through a flexing tongue</text>
   </g>
   <circle cx="560" cy="170" r="7" fill="#ff7f0e"/>
   <text x="572" y="160" font-size="18" fill="#c45f00" font-weight="700">N</text>
@@ -83,12 +83,12 @@
   <!-- legend -->
   <g font-size="15">
     <text x="40" y="620" font-weight="700" fill="#111">Wires (suggested colours, 26–30 AWG stranded is easiest; 22 AWG fits)</text>
-    <rect x="40" y="636" width="30" height="8" fill="#d62728"/><text x="80" y="645">B+  : top bulkhead hole (touches the + face) → down the spine → S1 leg      ≈ 65 mm</text>
-    <rect x="40" y="661" width="30" height="8" fill="#ff7f0e"/><text x="80" y="670">N   : other S1 leg → up the spine → S2 leg + 270 Ω (red long leg)        ≈ 70 + 25 mm</text>
+    <rect x="40" y="636" width="30" height="8" fill="#d62728"/><text x="80" y="645">B+  : top bulkhead hole (touches the + face) → spine groove → S1 COM      ≈ 65 mm</text>
+    <rect x="40" y="661" width="30" height="8" fill="#ff7f0e"/><text x="80" y="670">N   : S1 NO → spine groove → S2 leg + 270 Ω (red long leg)        ≈ 70 + 25 mm</text>
     <rect x="40" y="686" width="30" height="8" fill="#e8c000"/><text x="80" y="695">X   : other S2 leg → 82 Ω (white long leg)                                 ≈ 25 mm</text>
     <rect x="40" y="711" width="30" height="8" fill="#222"/><text x="80" y="720">B−  : bottom bulkhead hole (touches the − face) → both LED short legs       ≈ 55 mm</text>
     <text x="40" y="755" fill="#444">Everything is soldered on the sled, on the bench, before it goes into the body: 10 joints, no wires to the body or</text>
-    <text x="40" y="775" fill="#444">to the caps. Wires run in the notches either side of the spine. Battery contacts = a bare, tinned wire end pushed</text>
+    <text x="40" y="775" fill="#444">to the caps. Wires run in the grooves along both sides of the spine. Battery contacts = a bare, tinned wire end pushed</text>
     <text x="40" y="805" fill="#444">through the bulkhead hole and bent flat. Current: red ≈ 9 mA, white ≈ 17 mA. Other batteries: BUILD_GUIDE.md.</text>
   </g>
 
@@ -102,7 +102,7 @@
     <rect x="-20" y="252" width="40" height="10" fill="#ffa040"/><text x="30" y="260">top bulkhead (+)</text>
     <rect x="-17" y="262" width="34" height="96" fill="#999" stroke="#555"/><text x="30" y="312">3 × LR44, + up</text>
     <rect x="-20" y="358" width="40" height="10" fill="#ffa040"/><text x="30" y="366">bottom bulkhead (−)</text>
-    <rect x="-20" y="604" width="40" height="46" fill="#f4f4f2" stroke="#777"/><rect x="-14" y="612" width="20" height="30" fill="#222"/><text x="30" y="630">S1 sleeve switch (back)</text>
+    <rect x="-20" y="604" width="40" height="46" fill="#f4f4f2" stroke="#777"/><rect x="-14" y="612" width="20" height="30" fill="#222"/><text x="30" y="630">S1 microswitch, lever to the back</text>
     <path d="M-12 257 V620" stroke="#d62728" stroke-width="3" fill="none"/>
     <path d="M-5 632 V225 H-6 M-5 225 V60" stroke="#ff7f0e" stroke-width="3" fill="none"/>
     <path d="M14 225 H18 V70" stroke="#e8c000" stroke-width="3" fill="none"/>

@@ -50,13 +50,14 @@ PARTS = {   # name: (filament, settings, rotate_z_deg)
                            "sparse_infill_pattern": "zig-zag"}, 0),
     "fit_test":       (W, {"layer_height": "0.16", "wall_loops": "3", "sparse_infill_density": "15%"}, 0),
     "thread_test":    (W, {"layer_height": "0.12", "wall_loops": "4", "sparse_infill_density": "30%"}, 0),
+    "switch_test":    (W, {**S_FINE, "layer_height": "0.16", "wall_loops": "3"}, 0),
 }
 # multicolour objects: one volume per colour (exact splits made by tools/split_colours.py)
 MULTI = {"window_panel": [("panel (white)", W, "window_panel_base"), ("labels + plates (black)", B, "window_panel_details")],
          "btn_hours":    [("button (white)", W, "btn_hours_base"), ("top (black)", B, "btn_hours_top")],
          "top_cap":      [("spigot + light ring (clear)", C, "top_cap_clear"), ("dome (white)", W, "top_cap_white")]}
 PLATES = [
-    ("1 - Test prints - print first (white)", ["fit_test", "thread_test"]),
+    ("1 - Test prints - print first (white)", ["fit_test", "thread_test", "switch_test"]),
     ("2 - White parts", ["body", "sleeve", "sled", "bottom_cap", "clip"]),
     ("3 - Window panel + HOURS button - AMS white + black", ["window_panel", "btn_hours"]),
     ("4 - Top cap - AMS clear + white", ["top_cap"]),

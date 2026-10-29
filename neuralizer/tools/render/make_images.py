@@ -91,7 +91,7 @@ S[2] = step(2, "Window panel + HOURS button", "slide the sleeve down; button int
               "camera": cam([10, 0, ZW0 + 36], 40, 8, 420), "w": 560},
              {"meshes": body + [A("sleeve_open", "silver")] + PANEL + [A("btn_hours_base", "white"), A("btn_hours_top", "black")],
               "camera": cam([0, 0, ZW0 + 36], 0, 0, 400), "w": 460}])
-S[3] = step(3, "Wire the sled", "both switches + both LEDs click into the sled; solder 7 joints on the bench (see wiring.svg)",
+S[3] = step(3, "Wire the sled", "6×6 HOURS switch, sleeve microswitch (lever tip snipped) and both LEDs into the sled; solder on the bench",
             [{"meshes": SLED[:1] + SLED[2:], "camera": cam([0, 0, 125], -55, 14, 440), "w": 560},
              {"meshes": SLED[:1] + SLED[2:], "camera": cam([0, 0, 165], 120, 20, 200), "w": 460, "caption": "LED head"}])
 S[4] = step(4, "Batteries", "3× LR44, + toward the LEDs, snap in between the springy bulkheads",

@@ -1,6 +1,6 @@
 # MIB Neuralizer: Build Guide
 
-A support-free PETG prop for a Bambu Lab P1S. It has no screws, springs, magnets, glue or copper tape.
+A PETG prop for a Bambu Lab P1S. It has no screws, springs, magnets, glue or copper tape, and **every part prints without supports**: no surface is flatter than 45° and nothing starts in mid-air (checked on every part, §9).
 - **Sleeve closed:** a plain fluted metal-look tube. The panel and the light ring are hidden and nothing lights.
 - **Sleeve slides down:** the window panel and the clear ring under the white dome appear, and the ring glows **red** (ready).
 - **Press HOURS while open:** a **white** flash shines through the same ring.
@@ -21,11 +21,12 @@ A support-free PETG prop for a Bambu Lab P1S. It has no screws, springs, magnets
 
 | Topic | What I assumed | Safe default in `neuralizer.scad` |
 |---|---|---|
-| Tactile switches | **Your own** 6×6 mm through-hole switches, 2 of them (HOURS + sleeve). Nothing to buy. The defaults are the size of the most common 6×6 switch: a 3.5 mm body with its own 1.5 mm push-stem on top (5.0 mm tall overall) that clicks after 0.25 mm. You snip the 4 legs short (to about 1.5 mm) with side cutters so the switch sits in its printed pocket. | `sw_w=6`, `sw_body_h=3.5`, `sw_plunger_h=1.5`, `sw_travel=0.25`. If yours is a different height, measure it (§8) and change these numbers; the printed pockets and button adapt. |
+| HOURS switch | **Your own** 6×6 mm through-hole tactile switch. The defaults are the size of the most common one: a 3.5 mm body with its own 1.5 mm push-stem on top (5.0 mm tall overall) that clicks after 0.25 mm. You snip the 4 legs short (to about 1.5 mm) so it sits in its printed pocket. | `sw_w=6`, `sw_body_h=3.5`, `sw_plunger_h=1.5`, `sw_travel=0.25`. If yours differs, measure it (§8). |
+| Sleeve switch | **Your own** subminiature lever microswitch (the one in your photo: 3 terminals, hinge lever). I couldn't measure it, so the defaults are the standard subminiature size: body 12.8 × 6.5 × 5.8 mm, lever end 3.3 mm above the body when released, clicks after 1.2 mm of lever travel. **Snip off the lever's bent tip** flush with the end of the body, because the bent end won't fit in the 12 mm bore. Wire **COM + NO**. | `ms_L=12.8`, `ms_H=6.5`, `ms_T=5.8`, `ms_lever_h=3.3`, `ms_pretravel=1.2`. **Measure yours** (§8). |
 | Battery | 1 AA (1.5 V) can't light the white LED, and a 4.5 V stack of AAA cells won't fit a slim prop. | **3 × LR44 / SR44 = 4.5 V**. `battery`: `LR44x3`, `LR44x4` (6 V), `A23` (12 V). The prop is the same length for all three. |
 | Battery contacts | A tinned wire end through a hole in each bulkhead, bent flat. The two bulkheads flex 0.5 mm, so they are the battery spring. | `batt_preload=0.5` |
 | LEDs | 5 mm through-hole; red Vf ≈ 2.0 V, white Vf ≈ 3.1 V; long leg = + | `led_d=5`, `led_rim_d=5.8`, `led_len=8.6` |
-| Sleeve switch | The sleeve's finger pushes a flexing tongue in the body's back wall onto switch S1 on the sled. It only clicks at full open. | `pad_press=1.0`, `tongue_t=1.4` |
+| Sleeve mechanism | At full open, the sleeve's finger pushes a flexing tongue in the body's back wall onto the microswitch lever (≈ 1.5 mm). It only clicks at full open. | `pad_press=2.0`, `tongue_t=1.4` |
 | Top look | White dome, one **clear light ring** below it, white/silver body below that. The sleeve covers the ring when closed. | `window_h=5` |
 | Colours | White, black and clear PETG. AMS for the panel (white/black), the HOURS button (white/black) and the top cap (clear/white). | slots 1/2/3 in the 3MF |
 | PETG fits | PETG needs more clearance than PLA | sliding 0.35 mm radial, sled 0.25 mm, threads 0.25 mm per flank, button hole 0.25 mm |
@@ -60,7 +61,7 @@ To build another battery option, run the same command with `BATTERY=LR44x4` (or 
 
 ## 2. Shopping list
 
-You already have the electronics: 2 LEDs, the resistors, hookup wire, a soldering iron and your 6×6 tactile switches (one for HOURS, one for the sleeve). The only thing to buy:
+You already have the electronics: 2 LEDs, the resistors, hookup wire, a soldering iron, your 6×6 tactile switch (HOURS) and your lever microswitch (sleeve). The only thing to buy:
 
 | Item | Qty | Notes |
 |---|---|---|
@@ -77,7 +78,7 @@ You already have the electronics: 2 LEDs, the resistors, hookup wire, a solderin
 
 | Plate | Filament | Parts | Notes |
 |---|---|---|---|
-| **1 Test prints** (print first) | 1 white | `fit_test`, `thread_test` | ≈ 30 min. Tune the fits before the long prints (§7). |
+| **1 Test prints** (print first) | 1 white | `fit_test`, `thread_test`, `switch_test` | ≈ 40 min. Tune the fits before the long prints (§7). `switch_test` is the sled's two real switch holders: both your switches must press in snugly. |
 | **2 White parts** | 1 white | body, sleeve, sled, bottom cap, clip | The body prints standing, with a 5 mm brim. The sleeve prints top-edge down. The sled lies on its spine. |
 | **3 Panel + HOURS button** | **1 white + 2 black (AMS)** | window panel, HOURS button | Panel: black from the face up (labels, button heads, plates). Button: printed head-down, black head, white flange. |
 | **4 Top cap** | **3 clear + 1 white (AMS)** | top cap | Clear spigot and light ring, white dome. One colour change. |
@@ -152,27 +153,42 @@ Follow **[ASSEMBLY.md](ASSEMBLY.md)**: 7 illustrated steps, about 20–25 minute
 2. **`thread_test`** is the real bottom-cap thread. It should spin on by hand. Tight → `thread_clr` + 0.05; sloppy → − 0.05.
 3. Keep elephant-foot compensation on (the profile default). Seams are set to *back*, so deburr the sleeve bore seam.
 4. A few strokes of 400 grit on the body and a pinch of graphite give a buttery slide.
-5. **Sleeve switch force:**
-   - At full open, the bump presses the tongue's pad in by `pad_press` = 1.0 mm. That moves the S1 plunger 0.4–0.6 mm, depending on the switch force; it needs 0.25 mm to click.
-   - If S1 doesn't click, raise `pad_press` to 1.2.
-6. **Sled fit:** the sled should slide in and out freely. If it's tight, raise `sled_clr` by 0.05.
-7. Don't paint inside the sleeve, the channel or the bore.
+5. **Sleeve switch:**
+   - At full open, the bump presses the tongue's pad in by `pad_press` = 2.0 mm. That moves the microswitch lever end about 1.5 mm; it needs `ms_pretravel` (1.2 mm) to click.
+   - If it doesn't click, raise `pad_press` to 2.2 and reprint the body.
+6. **`switch_test`:** press both switches in. The 6×6 sits flush in its pocket with its legs in the slots behind it. The microswitch drops into its trough with its pins in the slot. Its snipped, released lever end must not stick out past the round outline of the block, because that outline is the bore.
+7. **Sled fit:** the sled should slide in and out freely. If it's tight, raise `sled_clr` by 0.05.
+8. Don't paint inside the sleeve, the channel or the bore.
 
 ---
 
-## 8. Measure your tactile switch (calipers)
+## 8. Measure your switches (calipers)
 
+**HOURS: 6×6 tactile**
 1. **Body width**, flat to flat → `sw_w` (6.0).
 2. **Body height**, from the bottom of the plastic body (not the legs) to where the plunger starts → `sw_body_h` (3.5).
 3. **Total height** to the plunger top. `sw_plunger_h` = total − body. Common totals: 4.3 / 5.0 / 6.0 / 7.0 / 8.0 / 9.5 mm.
 4. **Travel to the click** → `sw_travel` (0.25).
 
-The pockets, the HOURS button stem and the S1 tongue gap all follow automatically. Rebuild and re-run the checks (§1).
+**Sleeve: lever microswitch.** First snip the bent tip off the lever, flush with the end of the body.
+1. **Body length** (along the lever) → `ms_L` (12.8).
+2. **Body height**, from the face the pins come out of to the face the lever lies on → `ms_H` (6.5).
+3. **Body thickness** → `ms_T` (5.8).
+4. **Pins**: how far they stick out, plus a little for solder → `ms_pin` (1.8).
+5. **Lever end height** above the lever face, lever released, measured at the snipped end → `ms_lever_h` (3.3).
+6. **Lever travel to the click**: press the lever end slowly until it clicks, and measure how far it moved → `ms_pretravel` (1.2).
+
+The pockets, the HOURS button travel, the switch-tongue gap and the sleeve press all follow automatically. Rebuild and re-run the checks (§1). Then print `switch_test` again to confirm.
 
 ---
 
 ## 9. What was verified (numbers in `VERIFICATION.md`)
 
+- **Support-free (strict, every part):** no down-facing surface is flatter than 45°, so there are no bridges and no flat ceilings. Each part is also sliced every 0.2 mm, and every region sits on the layer below, so nothing starts in mid-air. That is what Bambu Studio would flag. Supports are off in the project.
+  - **Sled:** prints lying on its spine. Every cross-section has a 45° keel down to the spine, horizontal holes are teardrops, and the switch troughs are open on top.
+  - **Body:** prints standing up. The slot and pocket roofs are 45° gables or teardrops.
+  - **HOURS button:** held by a 45° cone in a 45° countersink in the panel. There is no bridged recess, and the button prints flange-down with nothing overhanging.
+  - **Clip hinge bar:** a diamond (all four faces at 45°).
 - **STLs:** all are closed manifold solids, on the bed, and fit within 256 mm³. The body is the tallest part at 182 mm.
 - **Collisions:** every part pair in the **open** and **closed** positions, including dummy cells, LEDs, and switches with legs. The only overlaps are the designed ones:
   - the sleeve bump pressing the tongue pad;
@@ -183,8 +199,8 @@ The pockets, the HOURS button stem and the S1 tongue gap all follow automaticall
   - The top cap clamps it.
 - **Threads:** screwing off along the helix every 30° gives zero overlap. Pulling straight off or turning without advancing both collide, so the teeth are engaged. Engagement is 0.51 mm.
 - **Switches:**
-  - **HOURS:** it rests on the S2 plunger, presses it 0.35 mm (> 0.25 mm travel) and stops on its flange.
-  - **Sleeve switch:** the spring model (finger + tongue) clicks S1 for 160–360 gf switches. Half-open releases it.
+  - **HOURS (6×6):** it rests 0.02 mm above the plunger, presses it 0.35 mm (> 0.25 mm travel), then stops on the window floor.
+  - **Sleeve (microswitch):** the lever rests 0.1 mm behind the tongue. Fully open, the spring model (finger + tongue) moves the lever end about 1.5 mm, more than the 1.2 mm it needs, for lever forces of 10–60 gf, and never bottoms it. Half-open releases it.
 - **Sleeve:**
   - **Closed:** it covers the panel **and** the clear ring.
   - **Open:** both are fully visible.
@@ -202,10 +218,11 @@ The pockets, the HOURS button stem and the S1 tongue gap all follow automaticall
 | Symptom | Fix |
 |---|---|
 | Nothing lights | Check the cells: + (flat, marked side) toward the LEDs. Check that both bent wire ends touch the cell faces. Test the sled out of the body. |
-| Red doesn't come on when open | Make sure the sleeve is all the way down (it clicks on its stop). If S1 still doesn't click, set `pad_press` = 1.2 and reprint the body. |
+| Red doesn't come on when open | Make sure the sleeve is all the way down (it clicks on its stop). Check that the microswitch is wired to **COM + NO**, not NC. If it still doesn't click, measure `ms_pretravel` / `ms_lever_h`, or set `pad_press` = 2.2, and reprint the body. |
+| Red is on when **closed**, off when open | It's wired to NC; move that wire to NO. |
 | Red works, white never flashes | Make sure S2 is wired to legs on **opposite** sides. If your switch is shorter than 5 mm total, set `sw_plunger_h`. |
 | Ring glow is dim or patchy | Frost the ring. Keep the dome unpainted. Use SR44 cells. |
-| Sled won't go in | Close the sleeve first. Check that the spine is on the clip side and no wire sticks out past the notches. |
+| Sled won't go in | Close the sleeve first. Check that the spine is on the clip side, the wires lie in the spine grooves, and the microswitch lever's bent tip is snipped off. |
 | Bambu Studio warns about presets | Accept. The project uses the system *Generic PETG* / *0.16mm Optimal* presets, which you can swap for your own. |
 | Sleeve won't click on | Ease the bump's lead-in with a file. It needs about 2 mm of finger flex. |
 | Cap is tight | Set `thread_clr` = 0.3, then reprint that part only. |

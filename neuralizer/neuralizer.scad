@@ -6,16 +6,19 @@
 //  of the inner body.  +X = the window / buttons, -X = back (sleeve
 //  switch finger), -Y = pocket-clip side (left when you face the window).
 //
-//  All electronics (cells, LEDs, resistors, both 6x6 switches) live on one
-//  printed SLED that is wired on the bench and slides into the body from the
+//  All electronics (cells, LEDs, resistors, the HOURS 6x6 switch and the sleeve
+//  lever microswitch) live on
+//  one printed SLED that is wired on the bench and slides into the body from the
 //  top; the top cap screws down on it.  No wires are threaded through the body.
+//  Every part prints without supports: no down-facing surface is flatter than
+//  45 deg and nothing starts in mid-air (checked by tools/printcheck.py).
 //
 //  Export one part:   openscad -D 'part="body"' -o body.stl neuralizer.scad
 //  (every part is placed in its print orientation unless pose="assembled")
 // =====================================================================
 
 /* [What to show] */
-part = "assembly"; // [assembly, body, sleeve, sled, bottom_cap, top_cap, window_panel, btn_hours, clip, fit_test, thread_test]
+part = "assembly"; // [assembly, body, sleeve, sled, bottom_cap, top_cap, window_panel, btn_hours, clip, fit_test, thread_test, switch_test]
 // Assembly view: sleeve position
 sleeve_state = "open"; // [open, closed]
 // Assembly view: cut away the near half to see inside
@@ -29,7 +32,7 @@ pose = "print"; // [print, assembled]
 // LR44x3 = 3 x LR44/SR44/AG13/357 button cells (4.5 V)  <- default
 battery = "LR44x3"; // [LR44x3, LR44x4, A23]
 
-/* [Tactile switch - MEASURE YOURS with calipers] */
+/* [HOURS switch: 6x6 tactile - MEASURE YOURS with calipers] */
 // square body size
 sw_w = 6.0;
 // body height: bottom of the plastic body to the top of the body (no plunger, no legs)
@@ -40,6 +43,24 @@ sw_plunger_h = 1.5;
 sw_travel = 0.25;
 // pocket clearance (total). 0.15 = snug PETG friction fit
 sw_fit = 0.15;
+
+/* [Sleeve switch: lever microswitch - MEASURE YOURS with calipers] */
+// Subminiature hinge-lever microswitch, pressed by the sleeve when it is fully open. Snip the
+// lever's bent tip off flush with the end of the switch body before you measure / fit it.
+// body length (along the lever)
+ms_L = 12.8;
+// body height: terminal face (where the 3 pins come out) to the lever face
+ms_H = 6.5;
+// body thickness
+ms_T = 5.8;
+// how far the terminal pins (plus solder) stick out of the terminal face
+ms_pin = 1.8;
+// lever end height above the lever face, lever released (measured at the snipped end)
+ms_lever_h = 3.3;
+// how far the lever end moves before the switch clicks
+ms_pretravel = 1.2;
+// pocket clearance (total). 0.15 = snug PETG friction fit
+ms_fit = 0.15;
 
 /* [LEDs] */
 led_d = 5.0;
@@ -60,7 +81,7 @@ fit_clr = 0.15;
 sled_clr = 0.25;
 // how far the sleeve bump overlaps the switch tongue's pad when fully open
 // (shared between the sleeve finger and the tongue; presses the sleeve switch)
-pad_press = 1.0;
+pad_press = 2.0;
 
 /* [Main dimensions] */
 body_d = 20;
@@ -94,8 +115,6 @@ R_WHITE = e12_up((V_batt - 3.1) / 0.020);   // white LED, Vf 3.1 V, ~20 mA
 
 // ------------------------------------------------------------- derived
 R      = body_d / 2;
-sw_tot = sw_body_h + sw_plunger_h;
-sw_pk  = (sw_w + sw_fit) / 2;                 // half size of switch pocket
 
 // bottom thread (decorative end cap), top thread (top cap)
 bt_D = 16; bt_P = 2.0; bt_h = 0.8; bt_len = 7;
@@ -130,35 +149,42 @@ z_ridge  = z_cl + travel - 0.9;                // closed detent ridge
 z_ch_top = z_cl + travel + 8.5 + 0.5;          // stays below the cap thread
 x_pad    = -(bump_in + pad_press);             // switch-tongue pad surface
 tongue_w = 6.0; tongue_root = 12; tongue_t = 1.4;   // flexure in the back wall
-z_pc     = z_cl + 4;                           // sleeve switch (S1) height
+z_pc     = z_cl + 4;                           // sleeve switch (S1) lever end height (under the pad)
 
 // sled + bore
 bore_r = 6.0; sled_r = bore_r - sled_clr;
-spine = [[-2.0, 2.0], [-7.8, -5.0]];          // x, y range (runs in a keyway at -Y)
-key_y = -5.4;                                  // sled sections are flat below this
-s1_tip = -(bore_r - 0.05);                     // S1 plunger tip (x), 0.05 behind the tongue
-s1_base = s1_tip + sw_tot;
+spine = [[-2.75, 2.75], [-7.8, -5.0]];        // x, y range (runs in a keyway at -Y)
+key_y = -5.4;                                  // sled sections are flat below this, 45 deg keel outside the spine
+// sleeve microswitch: lever end (released) 0.1 inside the bore, so the sled slides out past
+// the tongue; lever face and terminal face follow from the measured switch (mirrored to -x)
+ms_tip  = bore_r - 0.1;
+ms_face = ms_tip - ms_lever_h;
+ms_term = ms_face - ms_H;
+ms_yc   = 0.4;                                 // switch centre (y): a thicker trough floor
+s1_tip  = -ms_tip;
 
 // front window
 win_floor = bore_r;                            // panel back = bore tangent: the cells pass under it
 panel_t   = 1.6;
 win_w     = 13.3;
 panel_w   = 13.0;
-btn_ft    = 0.5;                               // button flange thickness (rides in a recess in the panel back)
-btn_trav  = sw_travel + 0.1;                   // HOURS button travel (flange stop on the window floor)
-btn_stem_r = 1.5;
-sw_tip    = bore_r - 0.1;                      // HOURS plunger tip at rest: inside the bore, so the sled pulls out past it
-btn_stem  = win_floor + btn_trav - sw_tip;     // stem below the flange, reaches the plunger
+sw_tot    = sw_body_h + sw_plunger_h;
+sw_pk     = (sw_w + sw_fit) / 2;               // half size of the 6x6 pocket
+sw_tip    = bore_r - 0.1;                      // HOURS plunger tip: inside the bore, so the sled pulls out past it
 sw_base   = sw_tip - sw_tot;
+btn_gap   = 0.02;                              // HOURS button at rest: this far above the plunger
+btn_trav  = btn_gap + sw_travel + 0.1;         // HOURS travel to its stop on the window floor (clicks + 0.1)
+btn_fl_r  = 4.8;                               // flange radius; a 45 deg cone holds it in a countersink
+btn_proud_h = 1.2;                             // HOURS head above the panel face
 // buttons: name, centre (mm from window top), head dia, flange dia, moving
 BTN = [["minutes", 8.0, 9.6, 9.6, false],
        ["hours",  22.5, 8.0, 9.6, true ],
        ["weeks",  36.0, 8.0, 9.6, false]];
 btn_proud = 0.9;
-hz = Zw1 - BTN[1][1];                          // HOURS switch height
+hz = Zw1 - BTN[1][1];                          // HOURS button + switch centre
 
 // LED head (top of the sled)
-flange_r = 7.8; flange_t = 1.2;
+flange_r = 7.3; flange_t = 1.2;                 // r 7.3: its 45 deg keel stays inside the cap thread's core
 led_x = 3.1;                                   // red at +x, white at -x
 spig_ir = 6.3;                                 // light bore of the top cap
 Zm = Zwin0 - ct_len - flange_t;                // flange bottom; the cap spigot clamps the flange
@@ -168,9 +194,11 @@ wht_rim_z = red_rim_z;
 // battery bay on the sled (below the HOURS switch)
 bh_t = 1.6; batt_preload = 0.5;
 stack = n_cells * cell_l;
-zbt = hz - 6.5;                                // top of the upper bulkhead
+ms_wall = 1.5;                                 // switch trough end walls
+zbt = hz - 6.5;                                // top of the upper bulkhead (1.5 mm below the HOURS holder: it flexes freely)
 cb0 = zbt - bh_t + batt_preload - stack;       // bottom of the cell stack
-z_sb = z_pc - 5;                               // bottom of the sled
+s1_z1 = z_pc + 1; s1_z0 = s1_z1 - ms_L;        // sleeve switch: lever end under the pad, pivot below
+z_sb = s1_z0 - ms_wall;                        // bottom of the sled
 
 echo(str("=== NEURALIZER: battery ", battery, " = ", V_batt, " V,  red resistor ", R_RED,
          " ohm, white resistor ", R_WHITE, " ohm"));
@@ -182,7 +210,7 @@ echo(str("PARAMS {\"Zw0\":", Zw0, ",\"Zw1\":", Zw1, ",\"Zt\":", Zt, ",\"Ls\":", 
   ",\"bump_in\":", bump_in, ",\"ch_floor\":", ch_floor, ",\"pad_press\":", pad_press, ",\"bt_P\":", bt_P, ",\"tt_P\":", ct_P,
   ",\"bt_D\":", bt_D, ",\"tt_D\":", ct_D, ",\"bt_h\":", bt_h, ",\"tt_h\":", ct_h, ",\"thread_clr\":", thread_clr,
   ",\"bt_core\":", tap_core(bt_D, bt_P, bt_h, thread_clr), ",\"tt_core\":", tap_core(ct_D, ct_P, ct_h, thread_clr),
-  ",\"btn_trav\":", btn_trav, ",\"sw_travel\":", sw_travel, ",\"z_win_bot\":", Zwin0, ",\"z_win_top\":", Zwin1, ",\"top_closed\":", top_closed,
+  ",\"btn_trav\":", btn_trav, ",\"sw_travel\":", sw_travel, ",\"ms_pretravel\":", ms_pretravel, ",\"ms_lever_h\":", ms_lever_h, ",\"btn_gap\":", btn_gap, ",\"z_win_bot\":", Zwin0, ",\"z_win_top\":", Zwin1, ",\"top_closed\":", top_closed,
   ",\"red_tip\":", Zm + red_rim_z + led_len, ",\"wht_tip\":", Zm + wht_rim_z + led_len, ",\"bar_r\":", bar_r, ",\"V\":", V_batt,
   ",\"s1_tip\":", s1_tip, ",\"bore_r\":", bore_r, ",\"tongue_w\":", tongue_w, ",\"tongue_root\":", tongue_root, ",\"tongue_t\":", tongue_t,
   ",\"sled_len\":", Zm + flange_t - z_sb, ",\"batt_preload\":", batt_preload,
@@ -243,9 +271,10 @@ module thread_tap(D, P, h, c, z0, z1, fn = 96) {
 // =====================================================================
 //  BODY  (a tube for the sled, window, sleeve channel + switch tongue)
 // =====================================================================
-// bore: circle + keyway for the spine (-Y) + flat lanes for the S1 (-X) and S2 (+X) plungers
+// bore: circle + keyway for the spine (-Y) + flat lanes for the two switch levers (+X / -X)
 module bore_2d(r) union() { circle(r); translate([spine[0][0] - 0.25, spine[1][0] - 0.25]) square([spine[0][1] - spine[0][0] + 0.5, -spine[1][0] + 0.25]);
   translate([-r, -2.1]) square([2 * r, 4.2]); }
+z_bore0 = min(z_sb - 0.5, z_cl - tongue_root);  // the tongue is free from its root up
 module body() {
   difference() {
     union() {
@@ -259,7 +288,7 @@ module body() {
     translate([0, 0, bt_len - eps]) cylinder(r1 = fM, r2 = 0, h = fM);
     translate([0, 0, -eps]) difference() { cylinder(r = R + 1, h = 0.6); cylinder(r1 = R - 0.6, r2 = R, h = 0.6); }
     // sled bore with keyway, seat cone, cap thread
-    translate([0, 0, z_sb - 0.5]) linear_extrude(Zt - z_sb + 1) bore_2d(bore_r);
+    translate([0, 0, z_bore0]) linear_extrude(Zt - z_bore0 + 1) bore_2d(bore_r);
     translate([0, 0, Zm - (flange_r + 0.15 - bore_r)]) cylinder(r1 = bore_r, r2 = flange_r + 0.15, h = flange_r + 0.15 - bore_r + eps);
     thread_tap(ct_D, ct_P, ct_h, thread_clr, Zm, Zt + 1);
     translate([0, 0, Zt - 0.5]) cylinder(r1 = ct_D/2 + thread_clr, r2 = ct_D/2 + thread_clr + 0.5 + eps, h = 0.5 + eps);
@@ -283,7 +312,8 @@ module back_channel_cuts() {
   // inward and the tongue presses the sled's S1 switch
   zt0 = z_cl - tongue_root; zt1 = z_cl + 11;
   for (sg = [-1, 1]) box([-R - 1, -bore_r + 0.5], sg > 0 ? [tongue_w/2, tongue_w/2 + 0.6] : [-tongue_w/2 - 0.6, -tongue_w/2], [zt0, zt1 + 0.6]);
-  box([-R - 1, -bore_r + 0.5], [-tongue_w/2 - 0.6, tongue_w/2 + 0.6], [zt1, zt1 + 0.6]);
+  xprism(-R - 1, -bore_r + 0.5) polygon([[-tongue_w/2 - 0.6, zt1], [tongue_w/2 + 0.6, zt1], [tongue_w/2 + 0.6, zt1 + 0.6],
+      [0, zt1 + 0.6 + tongue_w/2 + 0.6], [-tongue_w/2 - 0.6, zt1 + 0.6]]);   // 45 deg gable: no flat roof
   // thin, flexible root below the pad (45 deg chamfer under the pad)
   yprism(-tongue_w/2 - 0.6, tongue_w/2 + 0.6) polygon([[-bore_r - tongue_t, zt0 - eps], [-R - 2, zt0 - eps], [-R - 2, z_cl + eps],
       [x_pad, z_cl + eps], [-bore_r - tongue_t, z_cl - (-x_pad - bore_r - tongue_t)]]);
@@ -294,9 +324,12 @@ module window_cuts() {
       [R + 2, Zw1 + (R + 2 - win_floor)], [win_floor, Zw1]]);
   // panel tongue pockets: the panel goes in shifted up by panel_slide, then slides down
   box([win_floor - eps, win_floor + 1.5], [-3.2, 3.2], [Zw0 - tongue_l - 0.3, Zw0 + eps]);
-  box([win_floor - eps, win_floor + 1.5], [-3.2, 3.2], [Zw1 - eps, Zw1 + tongue_l + panel_slide + 0.3]);
-  // HOURS stem hole (long enough for the install slide); the flange stops on the floor around it
-  xprism(win_floor - 2, win_floor + eps) hull() { translate([0, hz]) teardrop(btn_stem_r + 0.3); translate([0, hz + panel_slide]) teardrop(btn_stem_r + 0.3); }
+  let(zr = Zw1 + tongue_l + panel_slide + 0.3)   // roof slopes down 45 deg toward the outside: no flat ceiling
+    yprism(-3.2, 3.2) polygon([[win_floor - eps, Zw1 - eps], [win_floor + 1.5, Zw1 - eps], [win_floor + 1.5, zr], [win_floor - eps, zr + 1.5 + eps]]);
+  // HOURS: the flange travels into the floor and stops on it (long enough for the install slide;
+  // teardrop = 45 deg roof when the body prints upright)
+  xprism(sw_tip + btn_gap - btn_trav, win_floor + eps) hull() {
+    translate([0, hz]) teardrop(btn_fl_r + 0.3); translate([0, hz + panel_slide]) teardrop(btn_fl_r + 0.3); }
 }
 
 // =====================================================================
@@ -313,7 +346,8 @@ module sleeve() {
     translate([0, 0, -1]) cylinder(r = sl_ir, h = Ls + 2, $fn = 200);
     for (k = [0:flute_n - 1]) rotate(k * 360 / flute_n) translate([sl_or + 0.3, 0, -1]) cylinder(r = 0.9, h = Ls + 2, $fn = 16);
     // finger slots (hidden inside two flute grooves)
-    for (s = [-1, 1]) rotate(180 + s * fing_ang) translate([sl_ir - 1, -0.4, Ls - fing_len]) cube([sl_or - sl_ir + 2, 0.8, fing_len + 1]);
+    for (s = [-1, 1]) rotate(180 + s * fing_ang) translate([sl_ir - 1, 0, 0]) xprism(0, sl_or - sl_ir + 2)
+      polygon([[-0.4, Ls - fing_len], [0, Ls - fing_len - 0.4], [0.4, Ls - fing_len], [0.4, Ls + 1], [-0.4, Ls + 1]]);   // pointed end: no flat roof
     // edge chamfers
     translate([0, 0, -eps]) cylinder(r1 = sl_ir + 0.6, r2 = sl_ir, h = 0.6, $fn = 200);
     translate([0, 0, Ls - 0.6]) cylinder(r1 = sl_ir, r2 = sl_ir + 0.6 + eps, h = 0.6 + eps, $fn = 200);
@@ -328,12 +362,13 @@ module bump() {
   }
 }
 // hinge lugs + bar for the clip (built on +Y, rotated to -Y in sleeve())
-clip_w = 5.0; bar_y = 14.9; bar_z = 4.0; bar_r = 1.0;
+clip_w = 5.0; bar_y = 14.9; bar_z = 4.0; bar_r = 1.12;   // bar_r = diamond corner radius
 module clip_lugs() {
   for (s = [-1, 1]) let(xc = s * (clip_w/2 + 0.2 + 0.6))
     multmatrix([[0,0,1,xc - 0.6],[1,0,0,0],[0,1,0,0],[0,0,0,1]]) linear_extrude(1.2)
       polygon([[sl_or - 1.2, 0], [bar_y + 1.6, 0], [bar_y + 1.6, bar_z + 1.6], [sl_or - 1.2, bar_z + 1.6 + (bar_y + 2.8 - sl_or)]]);
-  translate([-(clip_w/2 + 0.3), bar_y, bar_z]) rotate([0, 90, 0]) rotate(22.5) cylinder(r = bar_r, h = clip_w + 0.6, $fn = 8);
+  // hinge bar: a diamond (corner down on the bed = 45 deg faces); its corners turn freely in the clip's round hole
+  translate([-(clip_w/2 + 0.3), bar_y, bar_z]) rotate([0, 90, 0]) linear_extrude(clip_w + 0.6) diamond(bar_r);
 }
 
 // =====================================================================
@@ -347,7 +382,7 @@ module clip_2d() {
                [bar_y - 0.8, 46.8], [bar_y - 2.0, 46.6], [bar_y - 1.6, 44.0], [bar_y - 0.7, 38.0]]);
     }
     translate([bar_y, 0]) circle(r = bar_r + 0.15, $fn = 40);
-    translate([bar_y, 0]) rotate(-45) translate([0, -0.8]) square([3, 1.6]);   // snap opening: outward + down
+    translate([bar_y, 0]) rotate(-45) translate([0, -0.7]) square([3, 1.4]);   // snap opening (1.4 < the bar's 1.58 width)
   }
 }
 module clip_part() linear_extrude(clip_w) clip_2d();
@@ -370,7 +405,8 @@ module bottom_cap() {
     // decorative recessed strip with two dots (front)
     difference() {
       intersection() {
-        box([0, cap_r + 1], [-1.2, 1.2], [-13.5, -4.0]);
+        let(xr = cap_r - 0.5) yprism(-1.2, 1.2) polygon([[0, -13.5 + xr], [xr, -13.5], [cap_r + 2, -13.5 - (cap_r + 2 - xr)],
+            [cap_r + 2, -4.0 + (cap_r + 2 - xr)], [xr, -4.0], [0, -4.0 - xr]]);   // 45 deg ends
         difference() { translate([0, 0, -20]) cylinder(r = cap_r + 2, h = 20);
           union() { translate([0, 0, -6]) cylinder(r = cap_r - 0.5, h = 3); translate([0, 0, -6]) sphere(r = cap_r - 0.5, $fn = 96); } }
       }
@@ -381,52 +417,77 @@ module bottom_cap() {
 }
 
 // =====================================================================
-//  ELECTRONICS SLED  (prints lying on its spine; everything is wired on the bench)
+//  ELECTRONICS SLED  (prints lying on its spine, +Y up; everything is wired on the bench)
 //  top: LED head (flange clamped by the top cap)  |  resistor bay  |  S2 = HOURS
 //  switch  |  battery bay (sprung bulkheads)  |  wire run  |  S1 = sleeve switch
+//  Support-free: every cross-section has a 45 deg keel down to the spine, horizontal holes
+//  are teardrops, the switch troughs are open on top (+Y).
 // =====================================================================
-module sled_2d() intersection() { circle(sled_r); translate([-20, key_y]) square([40, 40]); }
+// 45 deg keel from the spine edges (the underside when the sled lies on its spine)
+// = hull of the circle above its 45 deg tangent points and a flat base at y = yb, wide enough
+//   (>= the spine) that both flanks are 45 deg or steeper
+module keel_2d(r, yb = key_y, w0 = spine[0][1]) let(w = max(w0, r * sqrt(2) + yb)) hull() {
+  intersection() { circle(r); translate([-r - 1, -r * 0.7071]) square([2 * r + 2, 2 * r + 2]); }
+  translate([-w, yb]) square([2 * w, 0.01]);
+}
+module sled_2d() keel_2d(sled_r);
 module section(z0, z1) translate([0, 0, z0]) linear_extrude(z1 - z0) sled_2d();
-// wire notches through a section, either side of the spine (teardrop points to print-up = +y)
-module wire_notches(z0, z1) for (sx = [-1, 1]) translate([sx * 3.4, -4.0, z0 - 1]) linear_extrude(z1 - z0 + 2) teardrop(0.95);
-// 6x6 switch pocket along x with a 45 deg roof toward +y (print-up)
-module sw_pocket(x0, x1, zc) xprism(x0, x1) polygon([[-sw_pk, zc - sw_pk], [sw_pk, zc - sw_pk], [2 * sw_pk, zc], [sw_pk, zc + sw_pk], [-sw_pk, zc + sw_pk]]);
+// spine with a wire groove along each side (45 deg roof); the cells' wires run here, under the cells
+module spine_2d() difference() {
+  translate([spine[0][0], spine[1][0]]) square([spine[0][1] - spine[0][0], spine[1][1] - spine[1][0]]);
+  // groove: 1.0 deep (x), open at the bed, roof rising 45 deg toward the opening (grows from the core)
+  for (sx = [-1, 1]) scale([sx, 1]) polygon([[1.75, spine[1][0] - 1], [spine[0][1] + 1, spine[1][0] - 1],
+      [spine[0][1] + 1, spine[1][0] + 1.0 + (spine[0][1] + 1 - 1.75)], [1.75, spine[1][0] + 1.0]]);
+}
+// 6x6 pocket along x with a 45 deg gable toward +y (print-up)
+module sw_pocket(x0, x1, zc, hw = sw_pk) xprism(x0, x1) polygon([[-hw, zc - sw_pk], [hw, zc - sw_pk], [hw + sw_pk, zc], [hw, zc + sw_pk], [-hw, zc + sw_pk]]);
+// trough for a lever microswitch, lever toward +x, body from z0 (pivot end) to z0 + ms_L (lever end).
+// Open on +y (print top) and +x (lever side); the terminal face bears on the -x wall.
+module ms_trough(z0) {
+  c = ms_fit / 2;
+  box([ms_term - c, 20], [ms_yc - ms_T/2 - c, 20], [z0 - c, z0 + ms_L + c]);             // body
+  box([ms_face, 20], [-20, 20], [z0 - ms_wall - 1, z0 + ms_L + ms_wall + 1]);           // lever swings here
+  box([ms_term - ms_pin - 1, ms_term + eps], [ms_yc - 1.0, 20], [z0 + 0.6, z0 + ms_L - 0.6]); // pins + solder
+}
 module sled() {
   difference() {
     union() {
-      // spine (rides in the keyway)
+      // spine (rides in the keyway); between the bulkheads only its lower part stays (cells sit there)
       difference() {
-        box(spine[0], spine[1], [z_sb, Zm - 0.5]);
-        box([-5, 5], [-5.95, 0], [cb0 + eps, zbt - bh_t - eps]);     // clear the cells between the bulkheads
+        translate([0, 0, z_sb]) linear_extrude(Zm + flange_t - z_sb) spine_2d();
+        box([-6, 6], [-5.95, 0], [cb0 + eps, zbt - bh_t - eps]);
       }
-      // LED head: flange + 45 deg seat cone, and a pull fin
-      translate([0, 0, Zm]) cylinder(r = flange_r, h = flange_t);
-      translate([0, 0, Zm - (flange_r - sled_r)]) cylinder(r1 = sled_r, r2 = flange_r, h = flange_r - sled_r + eps);
+      // LED head: flange + 45 deg seat cone (both with the keel), and a pull fin
+      translate([0, 0, Zm]) linear_extrude(flange_t) keel_2d(flange_r, spine[1][0], 0);
+      intersection() {
+        translate([0, 0, Zm - (flange_r - sled_r)]) cylinder(r1 = sled_r, r2 = flange_r, h = flange_r - sled_r + eps);
+        translate([0, 0, Zm - 10]) linear_extrude(11) keel_2d(flange_r, spine[1][0], 0);
+      }
       translate([0, 0, Zm - (flange_r - sled_r) - 2]) linear_extrude(2 + eps) sled_2d();
       translate([-0.5, 0, Zm + flange_t - eps]) rotate([90, 0, 90]) linear_extrude(1.0)
         polygon([[-5.6, 0], [4.0, 0], [4.0, 5.0], [-0.6, 5.0]]);
-      // S2 (HOURS) holder
+      // S2 (HOURS) holder, battery bulkheads (they flex on the spine = battery spring), S1 holder
       section(hz - 5, hz + 5);
-      // battery bulkheads (they flex on the spine = battery spring)
       section(zbt - bh_t, zbt);
       section(cb0 - bh_t, cb0);
-      // S1 (sleeve switch) holder
-      section(z_sb, z_pc + 5);
+      section(z_sb, s1_z1 + ms_wall);
     }
-    // LED bores + rim seats
+    // LED bores + rim seats (teardrops: horizontal holes in the print)
     for (l = [[led_x, red_rim_z], [-led_x, wht_rim_z]]) {
-      translate([l[0], 0, Zm - 12]) cylinder(r = led_d/2 + 0.1, h = 12 + flange_t + eps, $fn = 40);
-      translate([l[0], 0, Zm + l[1]]) cylinder(r = led_rim_d/2 + 0.1, h = flange_t - l[1] + eps, $fn = 40);
+      translate([l[0], 0, Zm - 12]) linear_extrude(12 + flange_t + eps) teardrop(led_d/2 + 0.1, $fn = 40);
+      translate([l[0], 0, Zm + l[1]]) linear_extrude(flange_t - l[1] + eps) teardrop(led_rim_d/2 + 0.1, $fn = 40);
     }
-    // S2 pocket (plunger +x) + leg relief with centre rib
-    sw_pocket(sw_base, 8, hz);
-    difference() { box([sw_base - 1.8, sw_base + 1.0], [-sw_pk, sw_pk], [hz - 4.2, hz + 4.2]); box([sw_base - 3, sw_base], [-0.8, 0.8], [hz - 5, hz + 5]); }
-    // S1 pocket (plunger -x) + leg relief
-    sw_pocket(-8, s1_base, z_pc);
-    difference() { box([s1_base - 1.0, s1_base + 1.8], [-sw_pk, sw_pk], [z_pc - 4.2, z_pc + 4.2]); box([s1_base, s1_base + 3], [-0.8, 0.8], [z_pc - 5, z_pc + 5]); }
-    // wire notches through every section, and wire holes in the bulkheads (cell contacts)
-    wire_notches(z_sb, zbt);
-    wire_notches(hz - 5, hz + 5);
+    // S2: 6x6 pocket, plunger +x (in from the front); leg relief behind it (gabled, open on top) with a
+    // centre rib the switch bears on; the front is cut back so the HOURS flange can travel
+    sw_pocket(sw_base, 20, hz);
+    difference() {
+      xprism(sw_base - 1.8, sw_base + 1.0) polygon([[-(sw_pk + 0.6), hz - 4.2], [20, hz - 4.2], [20, hz + 4.2], [-(sw_pk + 0.6), hz + 4.2]]);
+      box([sw_base - 3, sw_base + 1], [-10, 0.8], [hz - 2.5, hz + 2.5]);   // rib from the relief floor, between the legs
+    }
+    box([sw_tip - btn_trav - 0.1, 20], [-20, 20], [hz - 5.5, hz + 5.5]);
+    // S1: lever microswitch trough, lever toward -x (the body's tongue presses it)
+    mirror([1, 0, 0]) ms_trough(s1_z0);
+    // wire holes in the bulkheads (a tinned wire end bent flat = cell contact)
     for (z = [zbt - bh_t, cb0 - bh_t]) translate([0, 0, z - 1]) linear_extrude(bh_t + 2) translate([0, 0.6]) teardrop(0.6);
   }
 }
@@ -443,8 +504,8 @@ module top_cap() difference() {
       male_thread(ct_D, ct_P, ct_h, Zwin0 - ct_len, Zwin0 + eps);
       translate([0, 0, Zwin0 - ct_len]) cylinder(r1 = ct_D/2 - 0.6, r2 = ct_D/2 - 0.6 + 20, h = 20);
     }
-    translate([0, 0, Zwin0 - eps]) cylinder(r1 = ct_D/2, r2 = R, h = R - ct_D/2 + eps);          // 45 deg underside
-    translate([0, 0, Zwin0 + R - ct_D/2]) cylinder(r = R, h = window_h - (R - ct_D/2) + eps);     // clear ring, flush with the body
+    translate([0, 0, Zwin0 - ct_h]) cylinder(r1 = ct_D/2 - ct_h, r2 = R, h = R - ct_D/2 + ct_h + eps);   // 45 deg underside from the thread core
+    translate([0, 0, Zwin0 + R - ct_D/2 - eps]) cylinder(r = R, h = window_h - (R - ct_D/2) + 2 * eps);  // clear ring, flush with the body
     translate([0, 0, Zwin1]) cylinder(r1 = R, r2 = cap_lip_r, h = cap_lip_r - R + eps);          // 45 deg lip = sleeve stop
     translate([0, 0, Zwin1 + cap_lip_r - R]) cylinder(r = cap_lip_r, h = 1.5);
     translate([0, 0, Zwin1 + cap_lip_r - R + 1.5 - eps]) scale([1, 1, 0.8]) intersection() { sphere(r = cap_lip_r); cylinder(r = cap_lip_r + 1, h = cap_lip_r + 1); }
@@ -497,9 +558,10 @@ module window_panel() {
         sphere(r = 0.9, $fn = 24); cylinder(r = 1.0, h = 1.1, $fn = 24); }                               // YEAR buttons
     }
     // hole for the moving HOURS button (MINUTES / WEEKS are printed into the panel)
-    for (b = BTN) if (b[4]) translate([0, vy(b[1]), -1]) {
-      cylinder(r = b[2]/2 + hole_clr, h = T + 2, $fn = 64);
-      cylinder(r = b[3]/2 + 0.2, h = 1 + btn_ft + btn_trav, $fn = 64);   // flange recess (10 mm bridge)
+    for (b = BTN) if (b[4]) translate([0, vy(b[1]), 0]) {
+      translate([0, 0, -1]) cylinder(r = b[2]/2 + hole_clr, h = T + 2, $fn = 64);
+      // 45 deg countersink on the back: the button's cone sits in it (prints face-up without support)
+      translate([0, 0, -eps]) cylinder(r1 = btn_fl_r + 0.25, r2 = b[2]/2 + hole_clr, h = btn_fl_r + 0.25 - b[2]/2 - hole_clr + eps, $fn = 64);
     }
     // detent dimples on the back (click over the body's bumps at the end of the slide)
     for (sy = [-1, 1]) translate([sy * det_y, det_v, -eps]) cylinder(r1 = 0.75, r2 = 0.25, h = 0.5, $fn = 24);
@@ -527,18 +589,19 @@ module window_panel_details() intersection() { window_panel(); panel_detail_zone
 // =====================================================================
 //  BUTTONS (black): flange behind the panel, head through it
 // =====================================================================
-module button(i) let(b = BTN[i], hl = panel_t - btn_trav - btn_ft + btn_proud) {
-  translate([0, 0, -btn_stem]) cylinder(r = btn_stem_r, h = btn_stem + eps, $fn = 32);
-  cylinder(r = b[3]/2, h = btn_ft, $fn = 64);
-  translate([0, 0, btn_ft - eps]) hull() {
-    cylinder(r = b[2]/2, h = hl - 0.4, $fn = 64);
-    cylinder(r = b[2]/2 - 0.4, h = hl, $fn = 64);
+// local z = 0: inner face (rests btn_gap above the lever end); +z = outward
+btn_cone_z = 0.2;                                    // flange cylinder height below the cone
+btn_top = win_floor - sw_tip - btn_gap + panel_t + btn_proud_h;   // head top (local z)
+module button(i) let(b = BTN[i]) {
+  cylinder(r = btn_fl_r, h = btn_cone_z + eps, $fn = 64);
+  translate([0, 0, btn_cone_z]) cylinder(r1 = btn_fl_r, r2 = b[2]/2, h = btn_fl_r - b[2]/2 + eps, $fn = 64);   // 45 deg
+  hull() {
+    cylinder(r = b[2]/2, h = btn_top - 0.4, $fn = 64);
+    cylinder(r = b[2]/2 - 0.4, h = btn_top, $fn = 64);
   }
 }
-
-// HOURS button colour split: the visible top (above the panel face) prints black
-module btn_print() translate([0, 0, panel_t - btn_trav + btn_proud - eps]) rotate([180, 0, 0]) children();
-module btn_black_zone() translate([0, 0, panel_t - btn_trav - 0.3]) cylinder(r = 20, h = 20);
+module btn_print() children();                      // flange on the bed, head up: nothing overhangs
+module btn_black_zone() translate([0, 0, win_floor - sw_tip - btn_gap + panel_t - 0.3]) cylinder(r = 20, h = 20);
 // =====================================================================
 //  QUICK TEST PRINTS - print these first (about 30 min) to tune clearances
 // =====================================================================
@@ -572,18 +635,39 @@ module thread_test() {
   }
 }
 
+// The two real switch holders of the sled, printed the same way (lying on the spine): your switches
+// must press in snugly. Sleeve switch: the snipped, released lever end must not stick out past the
+// round outline of the block (that outline is the bore).
+module switch_test() {
+  translate([0, 0, -spine[1][0]]) rotate([90, 0, 0]) translate([0, 0, -(hz - 5)]) difference() {
+    union() { translate([0, 0, hz - 5]) linear_extrude(10) spine_2d(); section(hz - 5, hz + 5); }
+    sw_pocket(sw_base, 20, hz);
+    difference() {
+      xprism(sw_base - 1.8, sw_base + 1.0) polygon([[-(sw_pk + 0.6), hz - 4.2], [20, hz - 4.2], [20, hz + 4.2], [-(sw_pk + 0.6), hz + 4.2]]);
+      box([sw_base - 3, sw_base + 1], [-10, 0.8], [hz - 2.5, hz + 2.5]);   // rib from the relief floor, between the legs
+    }
+  }
+  translate([0, 18, -spine[1][0]]) rotate([90, 0, 0]) translate([0, 0, -z_sb]) difference() {
+    union() { translate([0, 0, z_sb]) linear_extrude(s1_z1 + ms_wall - z_sb) spine_2d(); section(z_sb, s1_z1 + ms_wall); }
+    mirror([1, 0, 0]) ms_trough(s1_z0);
+  }
+}
+
 // ---------------------------------------------------------------- dummies (for the views + checks)
-module dummy_switch(x_tip, zc, outward = 1) {   // outward = +1: plunger toward +x
-  base = outward > 0 ? x_tip - sw_tot : x_tip + sw_tot;
-  for (sy = [-1, 1], sz = [-1, 1])               // leg shoulders + legs trimmed to 1.5 mm
-    translate([outward > 0 ? base - 1.5 : base - 0.5, sy * 2.25 - 0.35, zc + sz * (sw_w/2 + 0.2) - 0.2])
-      cube([2.0, 0.7, 0.4]);
-  if (outward > 0) {
-    translate([x_tip - sw_tot, -sw_w/2, zc - sw_w/2]) cube([sw_body_h, sw_w, sw_w]);
-    translate([x_tip - sw_plunger_h, 0, zc]) rotate([0, 90, 0]) cylinder(r = 1.75, h = sw_plunger_h, $fn = 24);
-  } else {
-    translate([x_tip + sw_plunger_h, -sw_w/2, zc - sw_w/2]) cube([sw_body_h, sw_w, sw_w]);
-    translate([x_tip, 0, zc]) rotate([0, 90, 0]) cylinder(r = 1.75, h = sw_plunger_h, $fn = 24);
+module dummy_switch(x_tip, zc) {   // 6x6 tactile, plunger toward +x, legs trimmed to 1.5 mm
+  base = x_tip - sw_tot;
+  for (sy = [-1, 1], sz = [-1, 1]) translate([base - 1.5, sy * 2.25 - 0.35, zc + sz * (sw_w/2 + 0.2) - 0.2]) cube([2.0, 0.7, 0.4]);
+  translate([base, -sw_w/2, zc - sw_w/2]) cube([sw_body_h, sw_w, sw_w]);
+  translate([x_tip - sw_plunger_h, 0, zc]) rotate([0, 90, 0]) cylinder(r = 1.75, h = sw_plunger_h, $fn = 24);
+}
+// lever microswitch, lever toward +x, body from z0 (lever pivot end) to z0 + ms_L (lever end).
+// press = how far the lever end is pushed in (0 = released)
+module dummy_ms(z0, press = 0) {
+  translate([ms_term, ms_yc - ms_T/2, z0]) cube([ms_H, ms_T, ms_L]);
+  for (zp = [1.6, ms_L/2, ms_L - 1.6]) translate([ms_term - ms_pin, ms_yc, z0 + zp]) rotate([0, 90, 0]) cylinder(r = 0.55, h = ms_pin + eps, $fn = 12);
+  hull() {                                            // lever: 3 wide, 0.3 thick, pivot -> end
+    translate([ms_face, ms_yc - 1.5, z0 + 0.8]) cube([0.3, 3, 0.3]);
+    translate([ms_tip - press - 0.3, ms_yc - 1.5, z0 + ms_L - 0.3]) cube([0.3, 3, 0.3]);
   }
 }
 module dummy_led(x, rim_z) translate([x, 0, Zm + rim_z]) {
@@ -597,7 +681,7 @@ module dummy_cells() for (i = [0:n_cells - 1]) translate([0, 0, cb0 + i * cell_l
 //  assembly transforms + part selector
 // =====================================================================
 M_panel = [[0,0,1,win_floor],[1,0,0,0],[0,1,0,Zw0],[0,0,0,1]];
-module at_button(i, pressed = false) let(zc = Zw1 - BTN[i][1], x0 = win_floor + btn_trav - (pressed ? btn_trav : 0))
+module at_button(i, pressed = false) let(zc = Zw1 - BTN[i][1], x0 = sw_tip + btn_gap - (pressed ? btn_trav : 0))
   multmatrix([[0,0,1,x0],[1,0,0,0],[0,1,0,zc],[0,0,0,1]]) children();
 module at_clip(s) rotate(180) multmatrix([[0,0,1,-clip_w/2],[1,0,0,0],[0,1,0,s + bar_z],[0,0,0,1]]) children();
 
@@ -618,8 +702,8 @@ module assembly() {
     color(SILVER) top_cap_white();
     if (cutaway) {
       color([0.6, 0.6, 0.6]) dummy_cells();
-      color([0.2, 0.2, 0.2]) dummy_switch(sw_tip, hz, 1);
-      color([0.2, 0.2, 0.2]) dummy_switch(s1_tip, z_pc, -1);
+      color([0.2, 0.2, 0.2]) dummy_switch(sw_tip, hz);
+      color([0.2, 0.2, 0.2]) mirror([1, 0, 0]) dummy_ms(s1_z0);
       color("red") dummy_led(led_x, red_rim_z);
       color("white") dummy_led(-led_x, wht_rim_z);
     }
@@ -636,11 +720,12 @@ module print_pose(name) {
   else if (name == "top_cap_zone") translate([0, 0, ct_len - Zwin0]) top_cap_white_zone();
   else if (name == "window_panel") translate([0, tongue_l, 0]) window_panel();
   else if (name == "panel_detail_zone") translate([0, tongue_l, 0]) panel_detail_zone();
-  else if (name == "btn_hours") btn_print() button(1);     // head down: the stem is on top
+  else if (name == "btn_hours") btn_print() button(1);
   else if (name == "btn_zone") btn_print() btn_black_zone();
   else if (name == "clip") clip_part();
   else if (name == "fit_test") fit_test();
   else if (name == "thread_test") thread_test();
+  else if (name == "switch_test") switch_test();
 }
 module assembled_pose(name) {
   s = s_pos;
@@ -658,8 +743,8 @@ module assembled_pose(name) {
   else if (name == "btn_zone") at_button(1) btn_black_zone();
   // dummies used by the verification script and the pictures
   else if (name == "cells") dummy_cells();
-  else if (name == "s2_switch") dummy_switch(sw_tip, hz, 1);
-  else if (name == "s1_switch") dummy_switch(s1_tip, z_pc, -1);
+  else if (name == "s2_switch") dummy_switch(sw_tip, hz);
+  else if (name == "s1_switch") mirror([1, 0, 0]) dummy_ms(s1_z0);
   else if (name == "led_red") dummy_led(led_x, red_rim_z);
   else if (name == "led_white") dummy_led(-led_x, wht_rim_z);
 }

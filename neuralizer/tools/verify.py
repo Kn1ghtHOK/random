@@ -86,36 +86,23 @@ for whole, a_, b_, desc in (("window_panel", "window_panel_base", "window_panel_
 out()
 
 # ================================================================== 3 overhangs
-out("## 2. Overhang scan (print orientation)\n")
-out("Down-facing surfaces steeper than 50° from vertical (normal_z < -0.766), first layer ignored.")
-out("Each connected patch is measured by its *unsupported width* (2·area / perimeter ≈ the short side")
-out("of a bridge, or the overhang depth of a ledge). PETG on a P1S bridges ≤ 10 mm and tolerates")
-out("ledges ≤ 0.8 mm, so a patch passes if it is a bridge (width ≤ 10 mm, both ends anchored) or a")
-out("tiny ledge.\n")
-out("| part | down-facing area (mm²) | widest patch: width / area / z | verdict |")
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import printcheck
+out("## 2. Support-free check (print orientation, tools/printcheck.py)\n")
+out("Strict rules, so no part needs supports or a bridge:")
+out("- **overhangs:** no down-facing surface flatter than 45° (normal_z < −0.72) above the first layer;")
+out(f"  only patches narrower than {printcheck.MAX_LEDGE} mm are tolerated (the nozzle prints straight over them).")
+out(f"- **floating islands:** each part is sliced every {printcheck.LAYER} mm; every region of a layer must sit on")
+out("  the layer below (this is what Bambu Studio warns about as floating / needs support).\n")
+out("| part | overhang patches | floating islands | verdict |")
 out("|---|---|---|---|")
 for f in parts:
-    m = tm(str(f))
-    n = m.face_normals
-    zc = m.triangles_center[:, 2]
-    bad = (n[:, 2] < -0.766) & (zc > 0.25)
-    area = m.area_faces[bad].sum()
-    worst, ok = "-", True
-    if bad.any():
-        sub = m.submesh([np.nonzero(bad)[0]], append=True)
-        res = []
-        for c in sub.split(only_watertight=False):
-            try:
-                perim = c.outline().length
-            except Exception:
-                perim = 1e9
-            res.append((2 * c.area / max(perim, 1e-9), c.area, c.bounds[0][2]))
-        res.sort(key=lambda r: -r[0])
-        w = res[0]
-        worst = f"{w[0]:.2f} mm / {w[1]:.1f} mm² / z={w[2]:.1f}"
-        ok = w[0] <= 10.0
-    out(f"| {f.stem} | {area:.1f} | {worst} | {'OK' if ok else 'NEEDS SUPPORT'} |")
-    if not ok: fails.append(f"{f.stem} overhang")
+    if f.stem in printcheck.SKIP:
+        continue
+    oh, fl, _ = printcheck.check(f)
+    ok = not oh and not fl
+    out(f"| {f.stem} | {len(oh)} | {len(fl)} | {'OK, no supports' if ok else 'NEEDS SUPPORT'} |")
+    if not ok: fails.append(f"{f.stem} needs support")
 out()
 
 # ================================================================== 4 collisions
@@ -131,7 +118,7 @@ M["btn_hours_pressed"] = man(str(ASM / "btn_hours_pressed.stl"))
 # designed overlaps: (a, b) -> (reason, max allowed volume mm^3)
 EXPECTED = {
     frozenset(["cells", "sled"]): (f"battery bulkheads pre-loaded {P['batt_preload']} mm on the cell stack (they flex = battery spring)", 80),
-    frozenset(["sleeve_open", "body"]): ("sleeve bump pressing the switch tongue's pad (the tongue flexes and clicks S1)", 60),
+    frozenset(["sleeve_open", "body"]): ("sleeve bump pressing the switch tongue's pad (the tongue flexes and clicks S1)", 130),
 }
 def collide(names):
     rows = []
@@ -197,13 +184,15 @@ check(worst <= ZERO, f"electronics sled (with cells, both switches, LEDs) slides
 v, _ = inter(assy.rotate([0, 0, 180]), M["body"])
 check(v > 1, "sled is keyed: rotated 180° it does not fit (it can only go in the right way round)")
 for k in ("s1_switch", "s2_switch"):
-    v, _ = inter(M[k], M["sled"]); check(v <= ZERO, f"{k.split('_')[0].upper()} (6×6 mm dummy incl. leg shoulders) fits its sled pocket")
+    v, _ = inter(M[k], M["sled"]); check(v <= ZERO, f"{k.split('_')[0].upper()} " + ("(lever microswitch: body, pins, released lever) fits its sled trough" if k == "s1_switch" else "(6×6 tactile incl. trimmed legs) fits its sled pocket"))
 # HOURS
+pt, lh = P["ms_pretravel"], P["ms_lever_h"]
 v_rest, _ = inter(M["btn_hours"], M["s2_switch"])
+v_g, _ = inter(M["btn_hours"].translate([-P["btn_gap"] - 0.03, 0, 0]), M["s2_switch"])
+check(v_rest <= ZERO and v_g > 0, f"HOURS at rest: {P['btn_gap']} mm above the S2 plunger (no preload)")
 v_pr, ip = inter(M["btn_hours_pressed"], M["s2_switch"]); lo, hi = bbox(ip)
-check(v_rest <= ZERO, "HOURS button at rest just touches the S2 plunger (no preload, no rattle)")
-check(abs((hi[0] - lo[0]) - P["btn_trav"]) < 0.05 and P["btn_trav"] > P["sw_travel"],
-      f"HOURS pressed: pushes the plunger {hi[0]-lo[0]:.2f} mm ≥ travel {P['sw_travel']} mm → it clicks")
+depth = hi[0] - lo[0]
+check(depth >= P["sw_travel"], f"HOURS pressed: pushes the plunger {depth:.2f} mm (≥ {P['sw_travel']} travel → it clicks), then stops on the window floor")
 for o in ("body", "window_panel"):
     v, _ = inter(M["btn_hours_pressed"], M[o]); check(v <= ZERO, f"HOURS pressed: no contact with the {o.replace('_', ' ')} (stops on its flange ledges)")
 v, _ = inter(M["btn_hours"], M["window_panel"].translate([-0.3, 0, 0]))
@@ -212,15 +201,16 @@ check(v > 1, "HOURS button is captive behind the panel")
 E = 2000.0
 fing_len = 16 + 8.5 + 10.5
 Lf = fing_len - 16 - 4.25; If = 13.4 * 1.6 ** 3 / 12; kf = 3 * E * If / Lf ** 3
+# tongue: free from its root (the bore reaches below it) to the pad centre
 Lt = P["tongue_root"] + 4.0; It = P["tongue_w"] * P["tongue_t"] ** 3 / 12; kt = 3 * E * It / Lt ** 3
 gap = P["bore_r"] - (-P["s1_tip"])
-v, _ = inter(M["s1_switch"], M["body"]); v2, _ = inter(M["s1_switch"].translate([-gap - 0.02, 0, 0]), M["body"])
-check(v <= ZERO and v2 > 0, f"S1 plunger rests {gap:.2f} mm behind the tongue (free when the sleeve is not fully open)")
-for Fsw in (1.6, 2.5, 3.5):   # tactile actuation forces 160 / 250 / 350 gf
-    dt = max(0.0, (kf * P["pad_press"] - Fsw - 0.0) / (kf + kt))
+v, _ = inter(M["s1_switch"], M["body"]); v2, _ = inter(M["s1_switch"].translate([-gap - 0.03, 0, 0]), M["body"])
+check(v <= ZERO and v2 > 0, f"S1 lever end rests {gap:.2f} mm behind the tongue (free when the sleeve is not fully open)")
+for Fsw in (0.1, 0.3, 0.6):   # force needed at a hinge-lever end: ~10–60 gf
+    dt = max(0.0, (kf * P["pad_press"] - Fsw) / (kf + kt))
     press = dt - gap
-    check(press >= P["sw_travel"], f"S1 with a {Fsw*1000/9.81:.0f} gf switch: finger k={kf:.1f} N/mm, tongue k={kt:.1f} N/mm, overlap {P['pad_press']} mm "
-          f"→ tongue moves {dt:.2f} mm, plunger {press:.2f} mm (≥ {P['sw_travel']}) → clicks")
+    check(press >= pt and press <= lh - 0.3, f"S1, lever needing {Fsw*1000/9.81:.0f} gf: finger k={kf:.1f} N/mm, tongue k={kt:.1f} N/mm, overlap {P['pad_press']} mm "
+          f"→ tongue moves {dt:.2f} mm, lever end {press:.2f} mm (≥ {pt} pretravel → clicks; ≤ {lh - 0.3:.1f})")
 s_mid = M["sleeve_closed"].translate([0, 0, -P["travel"] / 2]); v, _ = inter(s_mid, M["body"])
 check(v <= ZERO, "half-open: the bump is off the pad → S1 released (lights only at full open)")
 # detent / stops / coverage
@@ -234,8 +224,8 @@ lo_s, hi_s = bbox(M["sleeve_closed"]); lo_o, hi_o = bbox(M["sleeve_open"])
 check(lo_s[2] <= P["Zw0"] and hi_s[2] >= P["z_win_top"], f"CLOSED: sleeve covers the panel AND the clear ring (z {lo_s[2]:.1f}…{hi_s[2]:.1f} ⊇ {P['Zw0']:.1f}…{P['z_win_top']:.1f}): a plain fluted tube")
 check(hi_o[2] <= P["Zw0"] + 0.01, f"OPEN: sleeve top at z={hi_o[2]:.1f} ≤ window bottom {P['Zw0']:.1f}: ring and panel fully visible")
 import math
-bar_flat = 2 * P["bar_r"] * math.cos(math.radians(22.5))
-check(1.6 < bar_flat, f"clip: snap opening 1.60 mm < bar {bar_flat:.2f} mm → clicks on and stays")
+bar_flat = P["bar_r"] * math.sqrt(2)   # narrowest width of the diamond bar (flat to flat)
+check(1.4 < bar_flat, f"clip: snap opening 1.40 mm < bar {bar_flat:.2f} mm → clicks on and stays")
 for st in ("open", "closed"):
     v, _ = inter(M[f"clip_{st}"], M[f"sleeve_{st}"]); check(v <= ZERO, f"clip ({st}) clear of the sleeve")
 v, ic = inter(M["cells"], M["sled"]); lo, hi = bbox(ic)

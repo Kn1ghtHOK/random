@@ -7,7 +7,7 @@ BOPT=()
 [ -n "$BATTERY" ] && BOPT=(-D "battery=\"$BATTERY\"")
 cd "$(dirname "$0")/.."
 mkdir -p stl logs
-PARTS="body sleeve sled bottom_cap top_cap top_cap_zone window_panel panel_detail_zone btn_hours btn_zone clip fit_test thread_test"
+PARTS="body sleeve sled bottom_cap top_cap top_cap_zone window_panel panel_detail_zone btn_hours btn_zone clip fit_test thread_test switch_test"
 for p in ${@:-$PARTS}; do
   ( s=$(date +%s); openscad "${BOPT[@]}" -o stl/$p.stl -D "part=\"$p\"" neuralizer.scad > logs/$p.log 2>&1 \
       && echo "$p OK $(( $(date +%s)-s ))s" || echo "$p FAILED (see logs/$p.log)" ) &
