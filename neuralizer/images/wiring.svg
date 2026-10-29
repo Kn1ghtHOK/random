@@ -71,11 +71,11 @@
     <polygon points="1010,150 1010,190 1050,170" fill="#e02020" stroke="#600" stroke-width="2"/>
     <line x1="1052" y1="150" x2="1052" y2="190" stroke="#600" stroke-width="4"/>
     <text x="1030" y="135" font-size="15" text-anchor="middle" font-weight="700" fill="#b00">RED LED</text>
-    <text x="1030" y="215" font-size="12" text-anchor="middle" fill="#555">under the red band</text>
+    <text x="1030" y="215" font-size="12" text-anchor="middle" fill="#555">behind the clear window</text>
     <polygon points="1010,310 1010,350 1050,330" fill="#fff" stroke="#555" stroke-width="2"/>
     <line x1="1052" y1="310" x2="1052" y2="350" stroke="#555" stroke-width="4"/>
     <text x="1030" y="295" font-size="15" text-anchor="middle" font-weight="700" fill="#333">WHITE LED</text>
-    <text x="1030" y="375" font-size="12" text-anchor="middle" fill="#555">inside the dome</text>
+    <text x="1030" y="375" font-size="12" text-anchor="middle" fill="#555">behind the clear window</text>
     <text x="1030" y="410" font-size="12" text-anchor="middle" fill="#555">LED symbol: long leg (+) left,</text><text x="1030" y="425" font-size="12" text-anchor="middle" fill="#555">short leg / flat side (−) right</text>
   </g>
   <text x="1160" y="460" font-size="18" fill="#111" font-weight="700">B−</text>

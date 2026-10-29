@@ -70,10 +70,16 @@ for f in parts:
     m = tm(str(f))
     ext = m.bounds[1] - m.bounds[0]
     wt = m.is_watertight and m.is_volume
-    fits = all(e <= b for e, b in zip(ext, BED)) and abs(m.bounds[0][2]) < 1e-3
+    sub = f.stem == "window_panel_details"   # colour region inside the panel object, not a separate print
+    fits = all(e <= b for e, b in zip(ext, BED)) and (sub or abs(m.bounds[0][2]) < 1e-3)
     out(f"| {f.stem} | {ext[0]:.1f}×{ext[1]:.1f}×{ext[2]:.1f} | {m.volume/1000:.2f} | {'yes' if wt else 'NO'} | {'yes' if fits else 'NO'} |")
     if not wt: fails.append(f"{f.stem} not watertight")
     if not fits: fails.append(f"{f.stem} does not fit / not on bed")
+# multicolour panel: the two colour bodies must rebuild the panel exactly, without overlap
+pa, pb, pd = (man(str(STL / f"{n}.stl")) for n in ("window_panel", "window_panel_base", "window_panel_details"))
+ov = vol(pb ^ pd); diff = abs(vol(pb) + vol(pd) - vol(pa)); xor = vol(pa - (pb + pd))
+check(ov <= ZERO and diff < 0.05 and xor < 0.05,
+      f"multicolour window panel: white base {vol(pb):.0f} mm³ + black details {vol(pd):.0f} mm³ = panel {vol(pa):.0f} mm³, no overlap, nothing missing")
 out()
 
 # ================================================================== 3 overhangs
@@ -111,7 +117,7 @@ out()
 
 # ================================================================== 4 collisions
 out("## 3. Collision matrix (assembly coordinates)\n")
-static = ["body", "bottom_cap", "battery_spring", "knurl_nut", "led_mount", "red_band", "dome",
+static = ["body", "bottom_cap", "battery_spring", "knurl_nut", "led_mount", "light_window", "dome",
           "window_panel", "btn_minutes", "btn_hours", "btn_weeks", "cells", "push_switch",
           "led_red", "led_white"]
 M = {k: man(str(ASM / f"{k}.stl")) for k in static}
@@ -125,7 +131,8 @@ M["fallback_switch"] = man(str(ASM / "fallback_switch.stl"))
 EXPECTED = {
     frozenset(["cells", "battery_spring"]): ("spring boss pre-compressed onto the top cell (battery contact force)", 60),
     frozenset(["battery_spring", "body"]): ("spring disc is a light press fit in the bay", 6),
-    frozenset(["dome", "led_mount"]): ("dome push-fit on the baffle (interference fit)", 6),
+    frozenset(["dome", "light_window"]): ("dome push-fit on the light window's top spigot (interference fit)", 8),
+    frozenset(["light_window", "knurl_nut"]): ("light window push-fit into the nut lip (interference fit)", 8),
     frozenset(["sleeve_open", "body"]): ("sleeve-switch finger bump pressed onto the contact land (contact force)", 60),
 }
 def collide(names, state):
@@ -247,12 +254,13 @@ v, _ = inter(M["cells"], M["body"]); check(v <= ZERO, f"battery: {P['battery']} 
 v, _ = inter(M["cells"], M["bottom_cap"]); check(v <= ZERO, "battery: stack sits on the cap's contact face")
 # LEDs
 for k in ("led_red", "led_white"):
-    for o in ("led_mount", "body", "knurl_nut", "red_band", "dome"):
+    for o in ("led_mount", "body", "knurl_nut", "light_window", "dome"):
         v, _ = inter(M[k], M[o])
         if v > ZERO: check(False, f"{k} collides with {o}")
 check(True, "both LEDs drop into their seats without touching anything")
-check(P["red_tip"] < P["z_band_top"], f"red LED tip ({P['red_tip']:.1f}) sits inside the red band zone, below the baffle ({P['z_band_top']:.1f})")
-check(P["wht_tip"] > P["z_band_top"] + 2.0 - 0.01, f"white LED tip ({P['wht_tip']:.1f}) pokes through the baffle into the dome")
+for nm, tip in (("red", P["red_tip"]), ("white", P["wht_tip"])):
+    check(P["z_nut_top"] + 1 < tip < P["z_win_top"] - 1,
+          f"{nm} LED tip at z={tip:.1f} sits inside the clear window band ({P['z_nut_top']:.1f}…{P['z_win_top']:.1f}), both LEDs shine through it")
 out()
 
 # ================================================================== 7 text

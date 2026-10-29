@@ -3,3 +3,6 @@ neuralizer/logs/
 neuralizer/tools/render/node_modules
 neuralizer/tools/render/asm
 __pycache__/
+neuralizer/tools/render/stl
+neuralizer/tools/render/scenes
+neuralizer/tools/render/plate_meshes

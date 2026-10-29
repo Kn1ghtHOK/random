@@ -11,7 +11,7 @@
 // =====================================================================
 
 /* [What to show] */
-part = "assembly"; // [assembly, body, sleeve, bottom_cap, battery_spring, knurl_nut, led_mount, red_band, dome, window_panel, btn_minutes, btn_hours, btn_weeks, clip, fit_test, thread_test]
+part = "assembly"; // [assembly, body, sleeve, bottom_cap, battery_spring, knurl_nut, led_mount, light_window, dome, window_panel, window_panel_base, window_panel_details, btn_minutes, btn_hours, btn_weeks, clip, fit_test, thread_test]
 // Assembly view: sleeve position
 sleeve_state = "open"; // [open, closed]
 // Assembly view: cut away the near half to see inside
@@ -52,7 +52,7 @@ thread_clr = 0.25;
 hole_clr = 0.25;
 // small locating fits
 fit_clr = 0.15;
-// diametral interference of the dome push-fit
+// diametral interference of the light-window / dome push-fits
 dome_press = 0.10;
 // copper tape thickness (pads are recessed by this)
 tape_t = 0.10;
@@ -67,10 +67,11 @@ flute_n = 20;
 cap_d = 22;
 nut_od = 24.5;
 dome_d = 17;
-band_h = 4.0;
+// height of the clear light window under the dome
+window_h = 5.0;
 
 /* [Hidden] */
-$fn = 72;
+$fn = 160;
 eps = 0.01;
 FONT = "Liberation Sans:style=Bold";
 
@@ -156,12 +157,13 @@ btn_proud = 0.9;
 // LED head
 flange_r = 8.0; flange_t = 1.2; lip_t = 1.5; stem_len = 11;
 y_red = -3.6; y_wht = 2.6; stem_r = 3.6;
-band_ir = 7.0; band_or = dome_d / 2;
-z_nut_top  = flange_t + lip_t;                 // local to Zt
-z_band_top = z_nut_top + band_h;
-baffle_r = 6.65; baffle_h = 2.0;
-red_rim_z = z_band_top - 0.5 - led_len;        // red tip 0.5 below band top
-wht_rim_z = 0.2;
+win_ir = 7.0; win_or = dome_d / 2;
+z_nut_top = flange_t + lip_t;                  // local to Zt
+z_win_top = z_nut_top + window_h;              // window spans z_nut_top .. z_win_top
+spig_ir = 6.3; spig_h = 1.3;                   // window push-fit spigots (into nut lip / into dome)
+red_rim_z = z_nut_top + window_h/2 - 0.0 - led_len;   // both LED tips in the middle of the window
+wht_rim_z_ = z_nut_top + window_h/2 + 0.5 - led_len;
+wht_rim_z = wht_rim_z_;
 
 // wire channel
 WC = [[-2.0, 1.2], [-6.8, -3.6]];              // x range, y range
@@ -169,7 +171,7 @@ WC = [[-2.0, 1.2], [-6.8, -3.6]];              // x range, y range
 echo(str("=== NEURALIZER: battery ", battery, " = ", V_batt, " V,  red resistor ", R_RED,
          " ohm, white resistor ", R_WHITE, " ohm"));
 echo(str("=== body ", Zt, " mm, sleeve ", Ls, " mm, travel ", travel,
-         " mm, overall ~", Zt + z_band_top + 12 + 17, " mm"));
+         " mm, overall ~", Zt + z_win_top + 12 + 17, " mm"));
 
 // machine-readable values for tools/verify.py
 echo(str("PARAMS {\"Zw0\":", Zw0, ",\"Zw1\":", Zw1, ",\"Zt\":", Zt, ",\"Ls\":", Ls, ",\"s_open\":", s_open,
@@ -178,7 +180,7 @@ echo(str("PARAMS {\"Zw0\":", Zw0, ",\"Zw1\":", Zw1, ",\"Zt\":", Zt, ",\"Ls\":", 
   ",\"bt_D\":", bt_D, ",\"tt_D\":", tt_D, ",\"bt_h\":", bt_h, ",\"tt_h\":", tt_h, ",\"thread_clr\":", thread_clr,
   ",\"bt_core\":", tap_core(bt_D, bt_P, bt_h, thread_clr), ",\"tt_core\":", tap_core(tt_D, tt_P, tt_h, thread_clr),
   ",\"z_face\":", z_face, ",\"stack_top\":", stack_top, ",\"z_sd\":", z_sd, ",\"spring_preload\":", spring_preload,
-  ",\"btn_trav\":", btn_trav, ",\"sw_travel\":", sw_travel, ",\"sw_press\":", sw_press, ",\"z_band_top\":", z_band_top,
+  ",\"btn_trav\":", btn_trav, ",\"sw_travel\":", sw_travel, ",\"sw_press\":", sw_press, ",\"z_nut_top\":", z_nut_top, ",\"z_win_top\":", z_win_top,
   ",\"red_tip\":", red_rim_z + led_len, ",\"wht_tip\":", wht_rim_z + led_len, ",\"bar_r\":", bar_r, ",\"V\":", V_batt,
   ",\"R_RED\":", R_RED, ",\"R_WHITE\":", R_WHITE, ",\"battery\":\"", battery, "\"}"));
 
@@ -197,7 +199,7 @@ module stadium(r, y0, y1) hull() { translate([0, y0]) circle(r); translate([0, y
 
 // ---------------------------------------------------------------- threads
 // one helical tooth, profile half-widths w_in (at r_in) and w_out (at r_out)
-module thread_ridge(r_in, r_out, w_in, w_out, P, z0, z1, fn = 64) {
+module thread_ridge(r_in, r_out, w_in, w_out, P, z0, z1, fn = 96) {
   n = ceil(((z1 - (floor(z0 / P) - 1) * P) / P + 1) * fn);
   s = (floor(z0 / P) - 1) * P;      // helix phase is global, so male/female always match
   pts = [for (i = [0:n]) let(a = 360 * i / fn, zc = s + P * i / fn) each [
@@ -215,7 +217,7 @@ module thread_ridge(r_in, r_out, w_in, w_out, P, z0, z1, fn = 64) {
 // Tooth half-width at radius r: P/4 - (r - r_mid)*tan(flank)
 thread_flank = 45;
 function tw(r, D, P, h) = P/4 - (r - (D/2 - h/2)) * tan(thread_flank);
-module male_thread(D, P, h, z0, z1, fn = 64) {
+module male_thread(D, P, h, z0, z1, fn = 96) {
   rm = D/2 - h; ri = rm - 0.05;
   union() {
     translate([0, 0, z0]) cylinder(r = rm, h = z1 - z0, $fn = fn);
@@ -226,7 +228,7 @@ module male_thread(D, P, h, z0, z1, fn = 64) {
 function tap_core(D, P, h, c) =
   max(D/2 - h + c, (D/2 - h/2) + (P/4 + c/cos(thread_flank) - (P/2 - 0.01)) / tan(thread_flank)) + 0.03;
 // the cutter for the matching internal thread: male tooth grown by c on every face
-module thread_tap(D, P, h, c, z0, z1, fn = 64) {
+module thread_tap(D, P, h, c, z0, z1, fn = 96) {
   ri = tap_core(D, P, h, c) - 0.03; ro = D/2 + c;
   union() {
     translate([0, 0, z0]) cylinder(r = ri + 0.03, h = z1 - z0, $fn = fn);
@@ -329,16 +331,16 @@ fing_len = 18;
 module sleeve() {
   difference() {
     union() {
-      cylinder(r = sl_or, h = Ls, $fn = 120);
+      cylinder(r = sl_or, h = Ls, $fn = 200);
       rotate(180) clip_lugs();   // clip on the left (-Y) like the prop
     }
-    translate([0, 0, -1]) cylinder(r = sl_ir, h = Ls + 2, $fn = 120);
+    translate([0, 0, -1]) cylinder(r = sl_ir, h = Ls + 2, $fn = 200);
     for (k = [0:flute_n - 1]) rotate(k * 360 / flute_n) translate([sl_or + 0.3, 0, -1]) cylinder(r = 0.9, h = Ls + 2, $fn = 16);
     // finger slots (hidden inside two flute grooves)
     for (s = [-1, 1]) rotate(180 + s * fing_ang) translate([sl_ir - 1, -0.4, Ls - fing_len]) cube([sl_or - sl_ir + 2, 0.8, fing_len + 1]);
     // edge chamfers
-    translate([0, 0, -eps]) cylinder(r1 = sl_ir + 0.6, r2 = sl_ir, h = 0.6, $fn = 120);
-    translate([0, 0, Ls - 0.6]) cylinder(r1 = sl_ir, r2 = sl_ir + 0.6 + eps, h = 0.6 + eps, $fn = 120);
+    translate([0, 0, -eps]) cylinder(r1 = sl_ir + 0.6, r2 = sl_ir, h = 0.6, $fn = 200);
+    translate([0, 0, Ls - 0.6]) cylinder(r1 = sl_ir, r2 = sl_ir + 0.6 + eps, h = 0.6 + eps, $fn = 200);
   }
   bump();
 }
@@ -346,7 +348,7 @@ module bump() {
   intersection() {
     yprism(-bump_w/2, bump_w/2) polygon([[-(sl_ir + 0.5), Ls - 9], [-bump_in, Ls - 9],
         [-bump_in, Ls - 0.5 - (sl_ir - bump_in)], [-(sl_ir + 0.5), Ls - 0.5 + 0.5]]);
-    cylinder(r = sl_ir + 0.3, h = Ls, $fn = 120);
+    cylinder(r = sl_ir + 0.3, h = Ls, $fn = 200);
   }
 }
 // hinge lugs + bar for the clip (built on +Y, rotated to -Y in sleeve())
@@ -390,14 +392,14 @@ module bottom_cap() {
       translate([0, 0, z_cone0 + fM - r_neck - eps]) cylinder(r1 = r_neck, r2 = r_face, h = r_neck - r_face + eps);
       translate([0, 0, -0.3 - (cap_r - 7.6)]) cylinder(r1 = cap_r, r2 = 7.6, h = cap_r - 7.6);   // 45 deg shoulder
       translate([0, 0, -6]) cylinder(r = cap_r, h = 6 - 0.3 - (cap_r - 7.6) + eps);
-      translate([0, 0, -6]) intersection() { sphere(r = cap_r, $fn = 96); translate([0, 0, -cap_r]) cylinder(r = cap_r + 1, h = cap_r); }
+      translate([0, 0, -6]) intersection() { sphere(r = cap_r, $fn = 160); translate([0, 0, -cap_r]) cylinder(r = cap_r + 1, h = cap_r); }
     }
     // decorative recessed strip with two dots (front)
     difference() {
       intersection() {
-        box([0, cap_r + 1], [-1.2, 1.2], [-13.5, -3.2]);
+        box([0, cap_r + 1], [-1.2, 1.2], [-13.5, -4.0]);
         difference() { translate([0, 0, -20]) cylinder(r = cap_r + 2, h = 20);
-          union() { translate([0, 0, -6]) cylinder(r = cap_r - 0.5, h = 3); translate([0, 0, -6]) sphere(r = cap_r - 0.5, $fn = 96); } }
+          union() { translate([0, 0, -6]) cylinder(r = cap_r - 0.5, h = 3); translate([0, 0, -6]) sphere(r = cap_r - 0.5, $fn = 160); } }
       }
       for (zz = [-6.0, -9.5]) let(rr = zz > -6 ? cap_r - 0.5 : sqrt(pow(cap_r - 0.5, 2) - pow(zz + 6, 2)))
         translate([rr, 0, zz]) sphere(r = 0.75, $fn = 16);
@@ -436,7 +438,7 @@ nut_z0 = Zw1 + nut_gap;
 nut_lip_r = 7.1;
 module knurl_nut() {
   difference() {
-    translate([0, 0, nut_z0]) cylinder(r = nut_od/2, h = Zt + z_nut_top - nut_z0, $fn = 120);
+    translate([0, 0, nut_z0]) cylinder(r = nut_od/2, h = Zt + z_nut_top - nut_z0, $fn = 200);
     for (k = [0:23]) rotate(k * 15) translate([nut_od/2 + 0.15, 0, nut_z0 - 1]) cylinder(r = 0.55, h = 30, $fn = 12);
     thread_tap(tt_D, tt_P, tt_h, thread_clr, nut_z0 - 1, Zt + 0.1);
     translate([0, 0, nut_z0 - eps]) cylinder(r1 = tt_D/2 + thread_clr + 0.4, r2 = tt_D/2 - 0.6, h = 1.0);
@@ -446,7 +448,8 @@ module knurl_nut() {
 }
 
 // =====================================================================
-//  LED HEAD (black): holds both LEDs side by side + resistors below
+//  LED HEAD (white = reflector): both LEDs side by side, tips in the middle of
+//  the clear light window; resistors + wires in the bores below.
 //  local z = 0 is the top face of the body (Zt)
 // =====================================================================
 module led_mount() {
@@ -455,33 +458,33 @@ module led_mount() {
       translate([0, 0, -stem_len]) linear_extrude(stem_len) stadium(stem_r, y_red, y_wht);
       translate([0, 0, -(flange_r - stem_r)]) cylinder(r1 = stem_r, r2 = flange_r, h = flange_r - stem_r);
       cylinder(r = flange_r, h = flange_t);
-      // white LED light tube (blocks white from the red chamber)
-      translate([0, y_wht, 0]) cylinder(r = 3.6, h = z_band_top);
-      // baffle posts
-      for (a = [0, 180, 250, 290]) rotate(a) translate([6.3, 0, 0]) cylinder(r = 0.6, h = z_band_top + 0.1, $fn = 16);
-      // baffle disc: blocks red from the dome, and is the dome's push-fit spigot
-      translate([0, 0, z_band_top]) cylinder(r = baffle_r, h = baffle_h);
     }
-    // red LED: rim seat at red_rim_z, resistor + wires in the bore below
-    translate([0, y_red, -stem_len - 1]) cylinder(r = led_d/2 + 0.1, h = stem_len + 1 + flange_t + eps, $fn = 40);
-    translate([0, y_red, red_rim_z]) cylinder(r = led_rim_d/2 + 0.1, h = flange_t - red_rim_z + eps, $fn = 40);
-    // white LED: rim seat at wht_rim_z, tube above
-    translate([0, y_wht, -stem_len - 1]) cylinder(r = led_d/2 + 0.1, h = 40, $fn = 40);
-    translate([0, y_wht, wht_rim_z]) cylinder(r = led_rim_d/2 + 0.1, h = 40, $fn = 40);
+    for (l = [[y_red, red_rim_z], [y_wht, wht_rim_z]]) {
+      translate([0, l[0], -stem_len - 1]) cylinder(r = led_d/2 + 0.1, h = stem_len + 1 + flange_t + eps, $fn = 40);
+      translate([0, l[0], l[1]]) cylinder(r = led_rim_d/2 + 0.1, h = flange_t - l[1] + eps, $fn = 40);
+    }
   }
 }
-module red_band() translate([0, 0, z_nut_top]) difference() {
-  cylinder(r = band_or, h = band_h, $fn = 96);
-  translate([0, 0, -1]) cylinder(r = band_ir, h = band_h + 2, $fn = 96);
-}
-dome_skirt = 3.5;
-module dome() translate([0, 0, z_band_top]) difference() {
+// clear ring both LEDs shine through; push-fits into the nut lip below and the dome above
+module light_window() translate([0, 0, z_nut_top]) difference() {
   union() {
-    cylinder(r = band_or, h = dome_skirt, $fn = 96);
-    translate([0, 0, dome_skirt]) intersection() { sphere(r = band_or, $fn = 96); cylinder(r = band_or + 1, h = band_or + 1, $fn = 96); }
+    ch = win_or - nut_lip_r;                       // 45 deg bevel underneath = prints without support
+    cylinder(r1 = nut_lip_r, r2 = win_or, h = ch + eps, $fn = 160);
+    translate([0, 0, ch]) cylinder(r = win_or, h = window_h - ch, $fn = 160);
+    translate([0, 0, -spig_h]) cylinder(r = nut_lip_r + dome_press/2, h = spig_h + eps, $fn = 160);
+    translate([0, 0, window_h - eps]) cylinder(r = win_ir, h = spig_h + eps, $fn = 160);
   }
-  translate([0, 0, -1]) cylinder(r = baffle_r - dome_press/2, h = baffle_h + 1, $fn = 96);
-  translate([0, 0, baffle_h - eps]) cylinder(r1 = baffle_r - dome_press/2, r2 = 0, h = baffle_r);
+  translate([0, 0, -spig_h - 1]) cylinder(r = spig_ir, h = window_h + 2 * spig_h + 2, $fn = 160);
+}
+// opaque dome cap (white); its 45 deg inner cone reflects the light out through the window
+dome_skirt = 3.5;
+module dome() translate([0, 0, z_win_top]) difference() {
+  union() {
+    cylinder(r = win_or, h = dome_skirt, $fn = 160);
+    translate([0, 0, dome_skirt]) intersection() { sphere(r = win_or, $fn = 160); cylinder(r = win_or + 1, h = win_or + 1, $fn = 160); }
+  }
+  translate([0, 0, -1]) cylinder(r = win_ir - dome_press/2, h = spig_h + 1 + 0.2, $fn = 160);
+  translate([0, 0, spig_h + 0.2 - eps]) cylinder(r1 = spig_ir, r2 = 0, h = spig_ir);
 }
 
 // =====================================================================
@@ -513,11 +516,11 @@ module window_panel() {
         translate([0, vy(29.0)]) label("HOURS");
         translate([0, vy(42.5)]) label("WEEKS");
         translate([0, vy(55.0)]) label("YEAR");
-        for (v = [22.5, 36.0]) translate([-5.55, vy(v)]) polygon([[-0.7, -0.9], [0.8, 0], [-0.7, 0.9]]);  // arrows
-        translate([5.4, vy(19.6)]) circle(r = 0.75, $fn = 20);                                           // indicator dot
+        for (v = [22.5, 36.0]) translate([-5.35, vy(v)]) polygon([[-0.7, -0.9], [0.75, 0], [-0.7, 0.9]]);  // arrows
+        translate([5.3, vy(19.6)]) circle(r = 0.75, $fn = 20);                                           // indicator dot
       }
-      for (s = [-1, 1]) translate([s * 5.4, vy(55.0), T - 0.3]) intersection() {
-        sphere(r = 1.0, $fn = 24); cylinder(r = 1.1, h = 1.1, $fn = 24); }                               // YEAR buttons
+      for (s = [-1, 1]) translate([s * 5.2, vy(55.0), T - 0.3]) intersection() {
+        sphere(r = 0.9, $fn = 24); cylinder(r = 1.0, h = 1.1, $fn = 24); }                               // YEAR buttons
     }
     // button holes
     for (b = BTN) translate([0, vy(b[1]), -1]) cylinder(r = b[2]/2 + hole_clr, h = T + 2, $fn = 64);
@@ -530,6 +533,17 @@ module window_panel() {
   // 8888 display segments (raised 0.4 from the display floor)
   translate([0, vy(63.0), T - 0.6 - eps]) linear_extrude(0.4) for (i = [0:3]) translate([(i - 1.5) * 2.6, 0]) seg7_8();
 }
+
+// ---- multicolour split (AMS): everything above the face + the top 2 layers of the two
+// recessed plates is printed in the detail colour (black), the rest in the panel colour (white)
+detail_floor = 0.24;
+module panel_detail_zone() {
+  translate([-20, -10, panel_t + 0.01]) cube([40, window_len + 20, 5]);   // +0.01: no zero-thickness film on the face
+  translate([0, vy(49.0), panel_t - 0.6 - detail_floor]) linear_extrude(detail_floor) offset(r = 0.6) square([11 - 1.2, 5 - 1.2], center = true);
+  translate([0, vy(63.0), panel_t - 0.6 - detail_floor]) linear_extrude(detail_floor) offset(r = 0.4) square([11 - 0.8, 6 - 0.8], center = true);
+}
+module window_panel_base() difference() { window_panel(); panel_detail_zone(); }
+module window_panel_details() intersection() { window_panel(); panel_detail_zone(); }
 
 // =====================================================================
 //  BUTTONS (black): flange behind the panel, head through it
@@ -555,8 +569,8 @@ module fit_test() {
     translate([0, 0, -eps]) difference() { cylinder(r = R + 1, h = 0.6); cylinder(r1 = R - 0.6, r2 = R, h = 0.6); }
   }
   for (i = [0:2]) let(c = slide_clr - 0.1 + 0.1 * i) translate([28 + i * 28, 0, 0]) difference() {
-    cylinder(r = sl_or, h = 12, $fn = 120);
-    translate([0, 0, -1]) cylinder(r = R + c, h = 14, $fn = 120);
+    cylinder(r = sl_or, h = 12, $fn = 200);
+    translate([0, 0, -1]) cylinder(r = R + c, h = 14, $fn = 200);
     for (k = [0:i]) rotate(90 + (k - i/2) * 14) translate([sl_or, 0, 12]) cube([2.4, 1.4, 3], center = true);
   }
 }
@@ -602,6 +616,19 @@ module dummy_led(y, rim_z) translate([0, y, Zt + rim_z]) {
   cylinder(r = led_d/2, h = led_len - led_d/2, $fn = 32);
   translate([0, 0, led_len - led_d/2]) sphere(r = led_d/2, $fn = 32);
 }
+// copper tape, drawn only for the build-guide pictures (where each piece goes)
+module tape_body() {
+  for (sg = [-1, 1]) box([x_land, x_land + tape_t], sg > 0 ? [sw_pk + 0.3, ch_w/2 - 0.2] : [-(ch_w/2 - 0.2), -(sw_pk + 0.3)], [z_cl + 0.3, z_cl + 8]);  // pads P1/P2
+  intersection() {                                                                   // B+ strip on the contact cone
+    translate([0, 0, z_cone0 - 0.02]) difference() { cylinder(r1 = fM + 0.02, r2 = bay_r + 0.02, h = fM - bay_r); cylinder(r1 = fM - 0.12, r2 = bay_r - 0.12, h = fM - bay_r); }
+    box([-2, 2], [-10, 0], [0, 20]);
+  }
+}
+module tape_bump() intersection() {                                                   // on the sleeve finger bump (sleeve coords)
+  yprism(-bump_w/2 + 0.3, bump_w/2 - 0.3) polygon([[-bump_in - 0.1, Ls - 8.8], [-bump_in + 0.01, Ls - 8.8], [-bump_in + 0.01, Ls - 3.2], [-bump_in - 0.1, Ls - 3.2]]);
+  cylinder(r = sl_ir, h = Ls);
+}
+module tape_cap() translate([0, 0, z_face]) cylinder(r = r_face, h = 0.1);           // disc on the cap face
 module dummy_cells() for (i = [0:n_cells - 1]) translate([0, 0, z_face + i * cell_l + 0.02]) cylinder(r = cell_d/2, h = cell_l - 0.04, $fn = 48);
 
 // =====================================================================
@@ -620,9 +647,9 @@ module assembly() {
     color(SILVER) knurl_nut();
     color(SILVER) multmatrix(M_panel) window_panel();
     for (i = [0:2]) color(BLACK) at_button(i) button(i);
-    color(BLACK) translate([0, 0, Zt]) led_mount();
-    color(show_lit && is_open ? [1, 0.1, 0.05, 0.85] : [0.85, 0.85, 0.88, 0.55]) translate([0, 0, Zt]) red_band();
-    color(show_lit && is_open ? [1, 1, 0.95, 0.9] : [0.9, 0.9, 0.92, 0.6]) translate([0, 0, Zt]) dome();
+    color(SILVER) translate([0, 0, Zt]) led_mount();
+    color(show_lit && is_open ? [1, 0.1, 0.05, 0.85] : [0.85, 0.85, 0.88, 0.55]) translate([0, 0, Zt]) light_window();
+    color(SILVER) translate([0, 0, Zt]) dome();
     if (cutaway) {
       color([0.6, 0.6, 0.6]) dummy_cells();
       color("orange") translate([0, 0, z_sd + spring_t]) rotate([180, 0, 0]) battery_spring();
@@ -640,9 +667,12 @@ module print_pose(name) {
   else if (name == "battery_spring") battery_spring();
   else if (name == "knurl_nut") translate([0, 0, Zt + z_nut_top]) rotate([180, 0, 0]) knurl_nut(); // lip on the bed
   else if (name == "led_mount") translate([0, 0, stem_len]) led_mount();
-  else if (name == "red_band") translate([0, 0, -z_nut_top]) red_band();
-  else if (name == "dome") translate([0, 0, -z_band_top]) dome();
+  else if (name == "light_window") translate([0, 0, spig_h - z_nut_top]) light_window();
+  else if (name == "dome") translate([0, 0, -z_win_top]) dome();
   else if (name == "window_panel") translate([0, 3.5, 0]) window_panel();
+  else if (name == "window_panel_base") translate([0, 3.5, 0]) window_panel_base();
+  else if (name == "window_panel_details") translate([0, 3.5, 0]) window_panel_details();
+  else if (name == "panel_detail_zone") translate([0, 3.5, 0]) panel_detail_zone();
   else if (name == "btn_minutes") button(0);
   else if (name == "btn_hours") button(1);
   else if (name == "btn_weeks") button(2);
@@ -659,9 +689,12 @@ module assembled_pose(name) {
   else if (name == "battery_spring") translate([0, 0, z_sd + spring_t]) rotate([180, 0, 0]) battery_spring();
   else if (name == "knurl_nut") knurl_nut();
   else if (name == "led_mount") translate([0, 0, Zt]) led_mount();
-  else if (name == "red_band") translate([0, 0, Zt]) red_band();
+  else if (name == "light_window") translate([0, 0, Zt]) light_window();
   else if (name == "dome") translate([0, 0, Zt]) dome();
   else if (name == "window_panel") multmatrix(M_panel) window_panel();
+  else if (name == "window_panel_base") multmatrix(M_panel) window_panel_base();
+  else if (name == "window_panel_details") multmatrix(M_panel) window_panel_details();
+  else if (name == "panel_detail_zone") multmatrix(M_panel) panel_detail_zone();
   else if (name == "btn_minutes") at_button(0) button(0);
   else if (name == "btn_hours") at_button(1) button(1);
   else if (name == "btn_hours_pressed") at_button(1, true) button(1);
@@ -672,6 +705,10 @@ module assembled_pose(name) {
   else if (name == "fallback_switch") dummy_switch(x_land - sw_press, z_pc, -1);
   else if (name == "led_red") dummy_led(y_red, red_rim_z);
   else if (name == "led_white") dummy_led(y_wht, wht_rim_z);
+  else if (name == "tape_body") tape_body();
+  else if (name == "tape_cap") tape_cap();
+  else if (name == "tape_bump_open") translate([0, 0, s_open]) tape_bump();
+  else if (name == "tape_bump_closed") translate([0, 0, s_open + travel]) tape_bump();
 }
 
 if (part == "assembly") assembly();
