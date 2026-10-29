@@ -5,7 +5,8 @@
 You need:
 - a soldering iron and solder;
 - side cutters;
-- the parts from the shopping list in [BUILD_GUIDE.md](BUILD_GUIDE.md): 2 tactile switches, 2 LEDs, 2 resistors, a little wire and 3 LR44 cells.
+- your own 2 tactile switches, 2 LEDs, 2 resistors and a little wire (nothing extra to buy);
+- 3 LR44 cells, the only thing on the shopping list in [BUILD_GUIDE.md](BUILD_GUIDE.md).
 
 ![finished](images/preview_closed_open.png)
 

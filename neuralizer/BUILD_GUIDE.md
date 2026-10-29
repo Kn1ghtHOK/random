@@ -21,7 +21,7 @@ A support-free PETG prop for a Bambu Lab P1S. It has no screws, springs, magnets
 
 | Topic | What I assumed | Safe default in `neuralizer.scad` |
 |---|---|---|
-| Tactile switches | 2 × standard 6×6 mm through-hole switches: 3.5 mm body + 1.5 mm plunger (5.0 mm total), 0.25 mm travel, legs on two opposite sides, legs trimmed to 1.5 mm | `sw_w=6`, `sw_body_h=3.5`, `sw_plunger_h=1.5`, `sw_travel=0.25`. **Measure yours** (§8). |
+| Tactile switches | **Your own** 6×6 mm through-hole switches, 2 of them (HOURS + sleeve). Nothing to buy. The defaults are the size of the most common 6×6 switch: a 3.5 mm body with its own 1.5 mm push-stem on top (5.0 mm tall overall) that clicks after 0.25 mm. You snip the 4 legs short (to about 1.5 mm) with side cutters so the switch sits in its printed pocket. | `sw_w=6`, `sw_body_h=3.5`, `sw_plunger_h=1.5`, `sw_travel=0.25`. If yours is a different height, measure it (§8) and change these numbers; the printed pockets and button adapt. |
 | Battery | 1 AA (1.5 V) can't light the white LED, and a 4.5 V stack of AAA cells won't fit a slim prop. | **3 × LR44 / SR44 = 4.5 V**. `battery`: `LR44x3`, `LR44x4` (6 V), `A23` (12 V). The prop is the same length for all three. |
 | Battery contacts | A tinned wire end through a hole in each bulkhead, bent flat. The two bulkheads flex 0.5 mm, so they are the battery spring. | `batt_preload=0.5` |
 | LEDs | 5 mm through-hole; red Vf ≈ 2.0 V, white Vf ≈ 3.1 V; long leg = + | `led_d=5`, `led_rim_d=5.8`, `led_len=8.6` |
@@ -60,13 +60,11 @@ To build another battery option, run the same command with `BATTERY=LR44x4` (or 
 
 ## 2. Shopping list
 
+You already have the electronics: 2 LEDs, the resistors, hookup wire, a soldering iron and your 6×6 tactile switches (one for HOURS, one for the sleeve). The only thing to buy:
+
 | Item | Qty | Notes |
 |---|---|---|
 | **LR44 button cells** (also sold as A76, AG13, L1154, 357; **SR44** silver-oxide is best) | 3 + spares | |
-| 6×6 mm tactile switch, through-hole, 5 mm total height | 2 | One for HOURS, one for the sleeve |
-| 5 mm LED, red + white | 1 each | |
-| Resistors 270 Ω + 82 Ω (¼ W or smaller) | 1 each | Values for other batteries in §4 |
-| 28 AWG silicone wire, 4 colours | ~30 cm | Any thin wire works |
 | Spray filler-primer + gloss black + chrome/bright-silver spray | 1 can each | Only for the chrome look (§5) |
 | *Optional:* graphite powder | | Smoother slide |
 | *Optional:* red paint marker | | Arrows / display digits, if you want them red like the film prop |
