@@ -5,7 +5,7 @@
 You need:
 - a soldering iron and solder;
 - side cutters;
-- your own 6×6 tactile switch (HOURS) and lever microswitch (sleeve), 2 LEDs, 2 resistors and a little wire (nothing extra to buy);
+- your own two 6×6 tactile switches, two 5 mm LEDs (red + white), 2 resistors and a little wire (nothing extra to buy);
 - 3 LR44 cells, the only thing on the shopping list in [BUILD_GUIDE.md](BUILD_GUIDE.md).
 
 ![finished](images/preview_closed_open.png)
@@ -41,7 +41,7 @@ Open **`3mf/neuralizer_P1S_PETG_project.3mf`** in Bambu Studio. It loads as a pr
 2. **Print plate 1 first: the test parts.**
    - The ring with the right number of notches should slide over the stub.
    - The thread ring should spin on by hand.
-   - **Switch test:** your 6×6 switch should press snugly into the square pocket. Your microswitch, with its bent lever tip snipped off, should drop into the trough. Its released lever end must not stick out past the round outline of the block.
+   - **Switch test:** a 6×6 switch should press snugly into the pocket, with its legs in the slots behind it.
    - If anything is wrong, adjust `slide_clr` / `thread_clr`, or measure the switches (BUILD_GUIDE.md §7–8). Regenerate before printing plates 2–4.
 3. **Leave the per-object settings alone.** Supports stay **off**, and nothing needs them: every part is designed so no surface is flatter than 45°.
 4. **Remove the brims.** Deburr the sleeve bore and the body's back channel with a fingernail.
@@ -85,22 +85,19 @@ MINUTES and WEEKS are printed into the panel. Only HOURS moves.
 
 Everything happens on the bench, with the sled lying on its spine.
 
-1. **Switches:**
-   - **S2 (HOURS), your 6×6 tactile switch:** trim its legs to about 1.5 mm. Press it into the square pocket under the LED head, plunger toward the front (the side the panel faces). The legs go into the slots behind it.
-   - **S1 (sleeve), your lever microswitch:**
-     - Snip the **bent tip** off the lever with side cutters, flush with the end of the switch body.
-     - Find **COM** and **NO**: the pair of terminals that only connects while the lever is pressed. If they aren't marked, check with a meter, or with a cell and an LED.
-     - Lay it in the open trough at the bottom end of the sled, lever facing the back, pins in the slot. The lever's hinge goes toward the bottom of the sled and its snipped end toward the top.
+1. **Switches:** trim the legs of both 6×6 switches to about 1.5 mm.
+   - **S2 (HOURS):** press it into the pocket under the LED head, plunger toward the front (the side the panel faces). Its legs go into the slots behind it.
+   - **S1 (sleeve):** press it into the pocket at the bottom end, plunger toward the back.
 2. **LEDs and resistors:**
    - Solder the 270 Ω resistor to the red LED's long leg, and the 82 Ω resistor to the white LED's long leg.
    - Push the legs down through the two holes in the LED head until the LED rims sit in their seats. **Red** goes on the side nearest the S2 plunger.
    - The resistors lie in the bay under the head.
 3. **Wires:** lay them in the grooves along both sides of the spine; they pass under the cells there. Each is 25–70 mm long; the lengths are in the diagram.
-   - **B+ (red):** strip and tin 4 mm at one end. Push it through the hole in the **top** bulkhead and bend it flat against the bulkhead's lower face, which is where the + side of the cells will press. Run it down to S1's **COM** pin.
-   - **N (orange):** from S1's **NO** pin up to one S2 leg, and on to the 270 Ω resistor.
+   - **B+ (red):** strip and tin 4 mm at one end. Push it through the hole in the **top** bulkhead and bend it flat against the bulkhead's lower face, which is where the + side of the cells will press. Run it down to one S1 leg.
+   - **N (orange):** from the S1 leg on the opposite side up to one S2 leg, and on to the 270 Ω resistor.
    - **X (yellow):** from the S2 leg on the opposite side to the 82 Ω resistor.
    - **B− (black):** a tinned end through the hole in the **bottom** bulkhead, bent flat against its upper face. Run it up to **both** LED short legs.
-4. **Test before batteries go in.** Hold 3 cells against the two bent wire ends. Press S1's lever and red should light; press S1 and S2 together and white should light too.
+4. **Test before batteries go in.** Hold 3 cells against the two bent wire ends. Press S1 and red should light; press S1 and S2 together and white should light too.
 
 ---
 

@@ -184,9 +184,8 @@ check(worst <= ZERO, f"electronics sled (with cells, both switches, LEDs) slides
 v, _ = inter(assy.rotate([0, 0, 180]), M["body"])
 check(v > 1, "sled is keyed: rotated 180° it does not fit (it can only go in the right way round)")
 for k in ("s1_switch", "s2_switch"):
-    v, _ = inter(M[k], M["sled"]); check(v <= ZERO, f"{k.split('_')[0].upper()} " + ("(lever microswitch: body, pins, released lever) fits its sled trough" if k == "s1_switch" else "(6×6 tactile incl. trimmed legs) fits its sled pocket"))
+    v, _ = inter(M[k], M["sled"]); check(v <= ZERO, f"{k.split('_')[0].upper()} " + "(6×6 tactile incl. trimmed legs) fits its sled pocket")
 # HOURS
-pt, lh = P["ms_pretravel"], P["ms_lever_h"]
 v_rest, _ = inter(M["btn_hours"], M["s2_switch"])
 v_g, _ = inter(M["btn_hours"].translate([-P["btn_gap"] - 0.03, 0, 0]), M["s2_switch"])
 check(v_rest <= ZERO and v_g > 0, f"HOURS at rest: {P['btn_gap']} mm above the S2 plunger (no preload)")
@@ -205,12 +204,12 @@ Lf = fing_len - 16 - 4.25; If = 13.4 * 1.6 ** 3 / 12; kf = 3 * E * If / Lf ** 3
 Lt = P["tongue_root"] + 4.0; It = P["tongue_w"] * P["tongue_t"] ** 3 / 12; kt = 3 * E * It / Lt ** 3
 gap = P["bore_r"] - (-P["s1_tip"])
 v, _ = inter(M["s1_switch"], M["body"]); v2, _ = inter(M["s1_switch"].translate([-gap - 0.03, 0, 0]), M["body"])
-check(v <= ZERO and v2 > 0, f"S1 lever end rests {gap:.2f} mm behind the tongue (free when the sleeve is not fully open)")
-for Fsw in (0.1, 0.3, 0.6):   # force needed at a hinge-lever end: ~10–60 gf
+check(v <= ZERO and v2 > 0, f"S1 plunger rests {gap:.2f} mm behind the tongue (free when the sleeve is not fully open)")
+for Fsw in (1.6, 2.5, 3.5):   # 6x6 tactile actuation forces 160 / 250 / 350 gf
     dt = max(0.0, (kf * P["pad_press"] - Fsw) / (kf + kt))
     press = dt - gap
-    check(press >= pt and press <= lh - 0.3, f"S1, lever needing {Fsw*1000/9.81:.0f} gf: finger k={kf:.1f} N/mm, tongue k={kt:.1f} N/mm, overlap {P['pad_press']} mm "
-          f"→ tongue moves {dt:.2f} mm, lever end {press:.2f} mm (≥ {pt} pretravel → clicks; ≤ {lh - 0.3:.1f})")
+    check(press >= P["sw_travel"], f"S1 with a {Fsw*1000/9.81:.0f} gf switch: finger k={kf:.1f} N/mm, tongue k={kt:.1f} N/mm, overlap {P['pad_press']} mm "
+          f"→ tongue moves {dt:.2f} mm, plunger {press:.2f} mm (≥ {P['sw_travel']}) → clicks")
 s_mid = M["sleeve_closed"].translate([0, 0, -P["travel"] / 2]); v, _ = inter(s_mid, M["body"])
 check(v <= ZERO, "half-open: the bump is off the pad → S1 released (lights only at full open)")
 # detent / stops / coverage
