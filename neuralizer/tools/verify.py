@@ -176,11 +176,15 @@ out()
 # ================================================================== 6 mechanisms
 out("## 5. Mechanism checks\n")
 # electronics sled: slides out of / into the body along its whole length (top cap removed)
-assy = M["sled"] + M["cells"] + M["s1_switch"] + M["s2_switch"] + M["led_red"] + M["led_white"]
+wiring = man(str(ASM / "wire_bp.stl")) + man(str(ASM / "wire_bm.stl")) + man(str(ASM / "wire_n.stl")) + \
+         man(str(ASM / "wire_x.stl")) + man(str(ASM / "resistors.stl")) + man(str(ASM / "led_legs.stl"))
+v, _ = inter(wiring, M["body"]); check(v <= ZERO, "wiring (4 wires, 2 resistors, LED legs as built) stays inside the body's bore")
+v, _ = inter(wiring, M["cells"]); check(v <= ZERO, "the one wire that passes the cells (B−) runs in the channel under them, clear of the cells")
+assy = M["sled"] + M["cells"] + M["s1_switch"] + M["s2_switch"] + M["led_red"] + M["led_white"] + wiring
 worst = 0.0; others = M["body"] + M["window_panel"] + M["btn_hours"]
 for dz in np.arange(1.0, P["sled_len"] + 12, 2.0):
     v, _ = inter(assy.translate([0, 0, dz]), others); worst = max(worst, v)
-check(worst <= ZERO, f"electronics sled (with cells, both switches, LEDs) slides out of the body over its full {P['sled_len']:.0f} mm, checked every 2 mm — max overlap {worst:.3f} mm³")
+check(worst <= ZERO, f"electronics sled (with cells, both switches, LEDs and all the wiring) slides out of the body over its full {P['sled_len']:.0f} mm, checked every 2 mm — max overlap {worst:.3f} mm³")
 v, _ = inter(assy.rotate([0, 0, 180]), M["body"])
 check(v > 1, "sled is keyed: rotated 180° it does not fit (it can only go in the right way round)")
 for k in ("s1_switch", "s2_switch"):

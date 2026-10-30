@@ -23,7 +23,7 @@ A PETG prop for a Bambu Lab P1S. It has no screws, springs, magnets, glue or cop
 |---|---|---|
 | Switches | **Your own** two 6×6 mm through-hole tactile switches: S2 under HOURS, S1 for the sleeve. The defaults are the most common size: a 3.5 mm body with its own 1.5 mm push-stem on top (5.0 mm tall overall) that clicks after 0.25 mm. You snip the 4 legs short (to about 1.5 mm) so each sits in its printed pocket. | `sw_w=6`, `sw_body_h=3.5`, `sw_plunger_h=1.5`, `sw_travel=0.25`. If yours differ, measure one (§8). |
 | Battery | 1 AA (1.5 V) can't light the white LED, and a 4.5 V stack of AAA cells won't fit a slim prop. | **3 × LR44 / SR44 = 4.5 V**. `battery`: `LR44x3`, `LR44x4` (6 V), `A23` (12 V). The prop is the same length for all three. |
-| Battery contacts | A tinned wire end through a hole in each bulkhead, bent flat. The two bulkheads flex 0.5 mm, so they are the battery spring. | `batt_preload=0.5` |
+| Battery position | At the **bottom** of the sled, under the sleeve switch, so only one wire has to pass the cells. Contacts are tinned wire ends bent flat on the two battery walls. The walls flex 0.5 mm, so they are the battery spring. | `batt_preload=0.5` |
 | LEDs | **5 mm** round through-hole LEDs, one red and one white, with the usual rim at the base (≈ 5.8 mm). Diffused gives the most even glow; water-clear is brighter. Red Vf ≈ 2.0 V, white Vf ≈ 3.1 V; long leg = +. | `led_d=5`, `led_rim_d=5.8`, `led_len=8.6` (rim to tip) |
 | Sleeve switch | At full open, the sleeve's finger pushes a flexing tongue in the body's back wall onto S1 on the sled. It only clicks at full open. | `pad_press=1.0`, `tongue_t=1.4` |
 | Top look | White dome, one **clear light ring** below it, white/silver body below that. The sleeve covers the ring when closed. | `window_h=5` |
@@ -106,6 +106,7 @@ The settings are stored per object, so you don't have to set anything:
 ## 4. Wiring
 
 ![wiring](images/wiring.png)
+![wiring on the sled](images/sled_wiring.png)
 
 All 10 solder joints are on the sled, made on the bench. S1 (sleeve) feeds node N: the red LED is always on N, and the white LED is on N only through S2 (HOURS).
 
@@ -183,7 +184,7 @@ Both pockets, the HOURS button travel and the switch-tongue gap all follow autom
 - **STLs:** all are closed manifold solids, on the bed, and fit within 256 mm³. The body is the tallest part at 182 mm.
 - **Collisions:** every part pair in the **open** and **closed** positions, including dummy cells, LEDs, and switches with legs. The only overlaps are the designed ones:
   - the sleeve bump pressing the tongue pad;
-  - the bulkheads pre-loading the cells.
+  - the battery walls pre-loading the cells.
 - **Sled:**
   - With cells, switches and LEDs fitted, it slides all the way out of the body, past the panel and the HOURS button, with zero overlap (checked every 2 mm).
   - Turned 180°, it doesn't fit, so it can only go in the right way round.
@@ -209,10 +210,10 @@ Both pockets, the HOURS button travel and the switch-tongue gap all follow autom
 | Symptom | Fix |
 |---|---|
 | Nothing lights | Check the cells: + (flat, marked side) toward the LEDs. Check that both bent wire ends touch the cell faces. Test the sled out of the body. |
-| Red doesn't come on when open | Make sure the sleeve is all the way down (it clicks on its stop). Check that S1 is wired to legs on **opposite** sides. If it still doesn't click, set `pad_press` = 1.2 and reprint the body. |
-| Red works, white never flashes | Make sure S2 is wired to legs on **opposite** sides. If your switch is shorter than 5 mm total, set `sw_plunger_h`. |
+| Red doesn't come on when open | Make sure the sleeve is all the way down (it clicks on its stop). Check that S1 is wired to two **diagonally opposite** legs. If it still doesn't click, set `pad_press` = 1.2 and reprint the body. |
+| Red works, white never flashes | Make sure S2 is wired to two **diagonally opposite** legs. If your switch is shorter than 5 mm total, set `sw_plunger_h`. |
 | Ring glow is dim or patchy | Frost the ring. Keep the dome unpainted. Use SR44 cells. |
-| Sled won't go in | Close the sleeve first. Check that the spine is on the clip side and the wires lie in the spine grooves. |
+| Sled won't go in | Close the sleeve first. Check that the spine is on the clip side and every wire lies down inside the slots (none sticking out past the round holders). |
 | Bambu Studio warns about presets | Accept. The project uses the system *Generic PETG* / *0.16mm Optimal* presets, which you can swap for your own. |
 | Sleeve won't click on | Ease the bump's lead-in with a file. It needs about 2 mm of finger flex. |
 | Cap is tight | Set `thread_clr` = 0.3, then reprint that part only. |

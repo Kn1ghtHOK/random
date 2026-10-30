@@ -6,7 +6,7 @@ BOPT=()
 [ -n "$BATTERY" ] && BOPT=(-D "battery=\"$BATTERY\"")
 cd "$(dirname "$0")/.."
 OUT=build/assembled; rm -rf $OUT; mkdir -p $OUT logs
-STATIC="body bottom_cap sled top_cap top_cap_zone window_panel panel_detail_zone btn_hours btn_hours_pressed btn_zone cells s2_switch s1_switch led_red led_white"
+STATIC="body bottom_cap sled top_cap top_cap_zone window_panel panel_detail_zone btn_hours btn_hours_pressed btn_zone cells s2_switch s1_switch led_red led_white wire_bp wire_bm wire_n wire_x resistors led_legs"
 for p in $STATIC; do
   openscad "${BOPT[@]}" -o $OUT/$p.stl -D "part=\"$p\"" -D 'pose="assembled"' neuralizer.scad > logs/asm_$p.log 2>&1 &
 done

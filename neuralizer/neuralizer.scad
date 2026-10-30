@@ -166,12 +166,17 @@ Zm = Zwin0 - ct_len - flange_t;                // flange bottom; the cap spigot 
 red_rim_z = (Zwin0 + window_h/2) - led_len - Zm;
 wht_rim_z = red_rim_z;
 
-// battery bay on the sled (below the HOURS switch)
+// battery bay at the bottom of the sled (below the sleeve switch S1), so only one wire passes the cells
 bh_t = 1.6; batt_preload = 0.5;
 stack = n_cells * cell_l;
-zbt = hz - 6.5;                                // top of the upper bulkhead (1.5 mm below the HOURS holder: it flexes freely)
+zbt = z_pc - 5 - 1.5;                          // top of the upper bulkhead (1.5 mm below the S1 holder: it flexes freely)
 cb0 = zbt - bh_t + batt_preload - stack;       // bottom of the cell stack
-z_sb = z_pc - 5;                               // bottom of the sled
+z_sb = cb0 - bh_t;                             // bottom of the sled = underside of the lower bulkhead
+// wiring: an open-top slot (the "trunk") through every holder, a full-depth slot through the upper
+// bulkhead, and a channel under the cells. You lay the wires in from the top, like a cable tray.
+tr_w = 0.8;                                    // trunk half width (1.6 mm slot: 28-24 AWG wire)
+tr_y0 = 0.8;                                   // trunk floor (y)
+ch_hw = 1.0;                                   // channel under the cells, half width
 
 echo(str("=== NEURALIZER: battery ", battery, " = ", V_batt, " V,  red resistor ", R_RED,
          " ohm, white resistor ", R_WHITE, " ohm"));
@@ -405,13 +410,8 @@ module keel_2d(r, yb = key_y, w0 = spine[0][1]) let(w = max(w0, r * sqrt(2) + yb
 }
 module sled_2d() keel_2d(sled_r);
 module section(z0, z1) translate([0, 0, z0]) linear_extrude(z1 - z0) sled_2d();
-// spine with a wire groove along each side (45 deg roof); the cells' wires run here, under the cells
-module spine_2d() difference() {
-  translate([spine[0][0], spine[1][0]]) square([spine[0][1] - spine[0][0], spine[1][1] - spine[1][0]]);
-  // groove: 1.0 deep (x), open at the bed, roof rising 45 deg toward the opening (grows from the core)
-  for (sx = [-1, 1]) scale([sx, 1]) polygon([[1.75, spine[1][0] - 1], [spine[0][1] + 1, spine[1][0] - 1],
-      [spine[0][1] + 1, spine[1][0] + 1.0 + (spine[0][1] + 1 - 1.75)], [1.75, spine[1][0] + 1.0]]);
-}
+// spine: a plain bar that rides in the body's keyway
+module spine_2d() translate([spine[0][0], spine[1][0]]) square([spine[0][1] - spine[0][0], spine[1][1] - spine[1][0]]);
 // 6x6 pocket along x with a 45 deg gable toward +y (print-up)
 module sw_pocket(x0, x1, zc, hw = sw_pk) xprism(x0, x1) polygon([[-hw, zc - sw_pk], [hw, zc - sw_pk], [hw + sw_pk, zc], [hw, zc + sw_pk], [-hw, zc + sw_pk]]);
 // 6x6 holder cut: pocket (plunger toward +x, tip at x = tip), leg relief behind it (gabled, open on
@@ -426,10 +426,12 @@ module sw_holder_cut(tip, zc) let(base = tip - sw_tot) {
 module sled() {
   difference() {
     union() {
-      // spine (rides in the keyway); between the bulkheads only its lower part stays (cells sit there)
+      // spine (rides in the keyway); between the bulkheads only two low rails stay (the cells sit on
+      // them, the wire channel runs between them)
       difference() {
         translate([0, 0, z_sb]) linear_extrude(Zm + flange_t - z_sb) spine_2d();
         box([-6, 6], [-5.95, 0], [cb0 + eps, zbt - bh_t - eps]);
+        box([-ch_hw, ch_hw], [-20, 0], [cb0 + eps, zbt - bh_t - eps]);
       }
       // LED head: flange + 45 deg seat cone (both with the keel), and a pull fin
       translate([0, 0, Zm]) linear_extrude(flange_t) keel_2d(flange_r, spine[1][0], 0);
@@ -440,11 +442,11 @@ module sled() {
       translate([0, 0, Zm - (flange_r - sled_r) - 2]) linear_extrude(2 + eps) sled_2d();
       translate([-0.5, 0, Zm + flange_t - eps]) rotate([90, 0, 90]) linear_extrude(1.0)
         polygon([[-5.6, 0], [4.0, 0], [4.0, 5.0], [-0.6, 5.0]]);
-      // S2 (HOURS) holder, battery bulkheads (they flex on the spine = battery spring), S1 holder
+      // S2 (HOURS) holder, S1 (sleeve) holder, battery bulkheads (they flex = battery spring)
       section(hz - 5, hz + 5);
+      section(z_pc - 5, z_pc + 5);
       section(zbt - bh_t, zbt);
       section(cb0 - bh_t, cb0);
-      section(z_sb, z_pc + 5);
     }
     // LED bores + rim seats (teardrops: horizontal holes in the print)
     for (l = [[led_x, red_rim_z], [-led_x, wht_rim_z]]) {
@@ -456,8 +458,11 @@ module sled() {
     box([sw_tip - btn_trav - 0.1, 20], [-20, 20], [hz - 5.5, hz + 5.5]);
     // S1 (sleeve): plunger -x, in from the back (the body's tongue presses it)
     mirror([1, 0, 0]) sw_holder_cut(-s1_tip, z_pc);
-    // wire holes in the bulkheads (a tinned wire end bent flat = cell contact)
-    for (z = [zbt - bh_t, cb0 - bh_t]) translate([0, 0, z - 1]) linear_extrude(bh_t + 2) translate([0, 0.6]) teardrop(0.6);
+    // wire trunk: open-top slot through both switch holders (wires pass above the rib, over the switches)
+    for (zc = [z_pc, hz]) box([-tr_w, tr_w], [tr_y0, 20], [zc - 6, zc + 6]);
+    // upper bulkhead: full-depth slot, so the B- wire comes up from under the cells and the B+ contact
+    // wire goes down onto the cells' top face
+    box([-tr_w, tr_w], [-20, 20], [zbt - bh_t - eps, zbt + eps]);
   }
 }
 
@@ -623,6 +628,21 @@ module dummy_led(x, rim_z) translate([x, 0, Zm + rim_z]) {
   cylinder(r = led_d/2, h = led_len - led_d/2, $fn = 32);
   translate([0, 0, led_len - led_d/2]) sphere(r = led_d/2, $fn = 32);
 }
+// wiring as built (for the pictures and the slide-out check): 1 mm insulated wire, diagonal 6x6 legs
+module wire(pts, r = 0.45) for (i = [0:len(pts) - 2]) hull() { translate(pts[i]) sphere(r, $fn = 10); translate(pts[i + 1]) sphere(r, $fn = 10); }
+s2_lo = [sw_tip - sw_tot - 1.3, -2.25, hz - 3.2];  s2_hi = [sw_tip - sw_tot - 1.3, 2.25, hz + 3.2];   // HOURS legs (diagonal)
+s1_lo = [-(-s1_tip - sw_tot - 1.3), -2.25, z_pc - 3.2];  s1_hi = [-(-s1_tip - sw_tot - 1.3), 2.25, z_pc + 3.2];
+r_z0 = Zm - 21; r_z1 = Zm - 15;                     // resistors hang under the LED bores, on the long legs
+module wire_bp() wire([[0, -3.0, zbt - bh_t + 0.95], [0, 2.4, zbt - 0.3], [0, 2.4, s1_lo[2]], s1_lo]);
+module wire_n()  wire([s1_hi, [0, 2.4, s1_hi[2]], [0, 2.4, s2_lo[2]], s2_lo, [0, 2.4, s2_lo[2]], [0, 2.4, hz + 6],
+                      [led_x, 1.27, r_z0 - 3], [led_x, 1.27, r_z0]]);
+module wire_x()  wire([s2_hi, [0, 3.3, s2_hi[2]], [0, 3.3, hz + 6], [-led_x, 1.27, r_z0 - 3], [-led_x, 1.27, r_z0]]);
+module wire_bm() union() {
+  wire([[0, -7.0, cb0 + 0.6], [0, -7.0, zbt - bh_t + 0.95], [0, 1.4, zbt - 0.45], [0, 1.4, hz + 6], [0, -1.27, Zm - 15]]);
+  for (sx = [-1, 1]) wire([[0, -1.27, Zm - 15], [sx * led_x, -1.27, Zm - 14]]);
+}
+module dummy_resistors() for (sx = [-1, 1]) translate([sx * led_x, 1.27, r_z0]) cylinder(r = 0.9, h = r_z1 - r_z0, $fn = 16);
+module dummy_led_legs() for (sx = [-1, 1], sy = [-1, 1]) translate([sx * led_x, sy * 1.27, Zm - 15]) cylinder(r = 0.25, h = 15 + red_rim_z, $fn = 8);
 module dummy_cells() for (i = [0:n_cells - 1]) translate([0, 0, cb0 + i * cell_l + 0.02]) cylinder(r = cell_d/2, h = cell_l - 0.04, $fn = 48);
 
 // =====================================================================
@@ -695,6 +715,12 @@ module assembled_pose(name) {
   else if (name == "s1_switch") mirror([1, 0, 0]) dummy_switch(-s1_tip, z_pc);
   else if (name == "led_red") dummy_led(led_x, red_rim_z);
   else if (name == "led_white") dummy_led(-led_x, wht_rim_z);
+  else if (name == "wire_bp") wire_bp();
+  else if (name == "wire_bm") wire_bm();
+  else if (name == "wire_n") wire_n();
+  else if (name == "wire_x") wire_x();
+  else if (name == "resistors") dummy_resistors();
+  else if (name == "led_legs") dummy_led_legs();
 }
 
 if (part == "assembly") assembly();

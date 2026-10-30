@@ -23,7 +23,9 @@ def finished(state="open", lit="off", panel=True, skip=()):
         parts += PANEL + ([A("btn_hours_pressed", "black")] if lit == "white" else [A("btn_hours_base", "white"), A("btn_hours_top", "black")])
     return [p for p in parts if not any(s in p["file"] for s in skip)]
 ELEC = [A("cells", "grey"), A("s1_switch", "black"), A("s2_switch", "black"), A("led_red", "led_red"), A("led_white", "led_white")]
-SLED = [A("sled", "white")] + ELEC
+WIRES = [A("wire_bp", "w_red"), A("wire_bm", "w_black"), A("wire_n", "w_orange"), A("wire_x", "w_yellow"),
+         A("resistors", "resistor"), A("led_legs", "metal")]
+SLED = [A("sled", "white")] + ELEC + WIRES
 def glow(lit):
     if lit == "red": return [{"color": 0xff2010, "i": 26000, "pos": [0, 0, WIN]}]
     if lit == "white": return [{"color": 0xff2010, "i": 16000, "pos": [0, 0, WIN]}, {"color": 0xffffff, "i": 60000, "pos": [0, 0, WIN]}]
@@ -72,6 +74,16 @@ jobs["cutaway"] = ({"h": 1100, "views": [
     {"caption": "TOP", "sub": "LED head clamped by the top cap; HOURS button on S2", "meshes": finished("open", "red") + SLED, "cut": True, "lights": glow("red"), "camera": CUT(162, 180)},
     {"caption": "BOTTOM", "sub": "sleeve finger → tongue → S1", "meshes": finished("open") + SLED, "cut": True, "camera": CUT(78, 180)}]},
     IMG / "cutaway.png")
+
+# ----------------------------------------------------------------- wiring on the sled (as it lies on the bench)
+ZPC, ZBT = P["z_pc"], P["z_pc"] - 6.5
+jobs["sled_wiring"] = ({"h": 1300, "views": [
+    {"caption": "WIRING ON THE SLED", "sub": "lay it on its spine; wires go in the open slot from the top",
+     "meshes": SLED, "camera": cam([0, 0, 112], 90, 6, 470), "w": 520},
+    {"caption": "BOTTOM: CELLS + SLEEVE SWITCH", "sub": "red B+ down onto the cells; black B− from under the cells up the slot",
+     "meshes": SLED, "camera": cam([0, 0, ZPC - 6], 68, 22, 150), "w": 520},
+    {"caption": "TOP: HOURS SWITCH + LED BAY", "sub": "orange N and yellow X to the resistors; black B− to both short legs",
+     "meshes": SLED, "camera": cam([0, 0, P["Zw1"] - 12], 68, 22, 160), "w": 520}]}, IMG / "sled_wiring.png")
 
 # ----------------------------------------------------------------- assembly steps
 def step(n, title, sub, views):

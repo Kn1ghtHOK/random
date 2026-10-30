@@ -42,7 +42,7 @@
     <rect x="300" y="150" width="80" height="40" rx="6" fill="#f2d3b3" stroke="#a0522d" stroke-width="2"/>
     <text x="340" y="176" font-size="15" text-anchor="middle" fill="#5a2d0c" font-weight="700">S1</text>
     <text x="340" y="135" font-size="14" text-anchor="middle" fill="#333">sleeve switch</text>
-    <text x="340" y="215" font-size="12" text-anchor="middle" fill="#555">6×6 tactile at the sled foot,</text>
+    <text x="340" y="215" font-size="12" text-anchor="middle" fill="#555">6×6 tactile above the cells,</text>
     <text x="340" y="230" font-size="12" text-anchor="middle" fill="#555">pressed through the body's</text>
     <text x="340" y="245" font-size="12" text-anchor="middle" fill="#555">flexing tongue by the sleeve</text>
   </g>
@@ -53,8 +53,8 @@
     <rect x="620" y="310" width="80" height="40" rx="6" fill="#222"/>
     <text x="660" y="336" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">S2</text>
     <text x="660" y="375" font-size="14" text-anchor="middle" fill="#333">HOURS button</text>
-    <text x="660" y="392" font-size="12" text-anchor="middle" fill="#555">6×6 tactile (any 2 legs</text>
-    <text x="660" y="407" font-size="12" text-anchor="middle" fill="#555">on opposite sides)</text>
+    <text x="660" y="392" font-size="12" text-anchor="middle" fill="#555">6×6 tactile (2 diagonally</text>
+    <text x="660" y="407" font-size="12" text-anchor="middle" fill="#555">opposite legs)</text>
   </g>
   <text x="745" y="320" font-size="18" fill="#a88a00" font-weight="700">X</text>
   <!-- resistors -->
@@ -82,30 +82,32 @@
   <text x="225" y="160" font-size="18" fill="#d62728" font-weight="700">B+</text>
   <!-- legend -->
   <g font-size="15">
-    <text x="40" y="620" font-weight="700" fill="#111">Wires (suggested colours, 26–30 AWG stranded is easiest; 22 AWG fits)</text>
-    <rect x="40" y="636" width="30" height="8" fill="#d62728"/><text x="80" y="645">B+  : top bulkhead hole (touches the + face) → spine groove → S1 leg      ≈ 65 mm</text>
-    <rect x="40" y="661" width="30" height="8" fill="#ff7f0e"/><text x="80" y="670">N   : other S1 leg → spine groove → S2 leg + 270 Ω (red long leg)        ≈ 70 + 25 mm</text>
-    <rect x="40" y="686" width="30" height="8" fill="#e8c000"/><text x="80" y="695">X   : other S2 leg → 82 Ω (white long leg)                                 ≈ 25 mm</text>
-    <rect x="40" y="711" width="30" height="8" fill="#222"/><text x="80" y="720">B−  : bottom bulkhead hole (touches the − face) → both LED short legs       ≈ 55 mm</text>
+    <text x="40" y="620" font-weight="700" fill="#111">Wires (suggested colours; thin wire, 28–24 AWG, under 1 mm thick with insulation)</text>
+    <rect x="40" y="636" width="30" height="8" fill="#d62728"/><text x="80" y="645">B+  : upper battery wall (touches the + face) → slot → S1 leg      ≈ 15 mm</text>
+    <rect x="40" y="661" width="30" height="8" fill="#ff7f0e"/><text x="80" y="670">N   : other S1 leg (diagonal) → slot → S2 leg → 270 Ω (red long leg)   ≈ 70 + 25 mm</text>
+    <rect x="40" y="686" width="30" height="8" fill="#e8c000"/><text x="80" y="695">X   : other S2 leg (diagonal) → 82 Ω (white long leg)                    ≈ 25 mm</text>
+    <rect x="40" y="711" width="30" height="8" fill="#222"/><text x="80" y="720">B−  : lower battery wall → under the cells → slot → both LED short legs   ≈ 135 mm</text>
     <text x="40" y="755" fill="#444">Everything is soldered on the sled, on the bench, before it goes into the body: 10 joints, no wires to the body or</text>
-    <text x="40" y="775" fill="#444">to the caps. Wires run in the grooves along both sides of the spine. Battery contacts = a bare, tinned wire end pushed</text>
-    <text x="40" y="805" fill="#444">through the bulkhead hole and bent flat. Current: red ≈ 9 mA, white ≈ 17 mA. Other batteries: BUILD_GUIDE.md.</text>
+    <text x="40" y="775" fill="#444">to the caps. Wires lie in the open slot through every holder; only B− passes the cells (in a channel under them).</text>
+    <text x="40" y="805" fill="#444">Battery contacts = tinned wire ends bent flat on the battery walls. Red ≈ 9 mA, white ≈ 17 mA.</text>
   </g>
 
   <!-- ===================== PHYSICAL ROUTE ===================== -->
   <g transform="translate(1290,105)" font-size="12">
     <text x="0" y="0" font-size="16" font-weight="700" text-anchor="middle">route on the sled</text>
     <rect x="-3" y="24" width="6" height="636" fill="#e6e6e2" stroke="#999"/>
-    <rect x="-22" y="30" width="44" height="76" rx="4" fill="#f4f4f2" stroke="#777"/><text x="30" y="60">LED head + resistors</text>
+    <rect x="-22" y="30" width="44" height="40" rx="4" fill="#f4f4f2" stroke="#777"/><text x="30" y="52">LED head</text>
     <circle cx="-9" cy="38" r="6" fill="#fff" stroke="#555"/><circle cx="9" cy="38" r="6" fill="#e02020"/>
-    <rect x="-20" y="207" width="40" height="35" fill="#f4f4f2" stroke="#777"/><rect x="-6" y="212" width="20" height="25" fill="#222"/><text x="30" y="229">S2 HOURS (front)</text>
-    <rect x="-20" y="252" width="40" height="10" fill="#ffa040"/><text x="30" y="260">top bulkhead (+)</text>
-    <rect x="-17" y="262" width="34" height="96" fill="#999" stroke="#555"/><text x="30" y="312">3 × LR44, + up</text>
-    <rect x="-20" y="358" width="40" height="10" fill="#ffa040"/><text x="30" y="366">bottom bulkhead (−)</text>
-    <rect x="-20" y="604" width="40" height="46" fill="#f4f4f2" stroke="#777"/><rect x="-14" y="612" width="20" height="30" fill="#222"/><text x="30" y="630">S1 sleeve switch (back)</text>
-    <path d="M-12 257 V620" stroke="#d62728" stroke-width="3" fill="none"/>
-    <path d="M-5 632 V225 H-6 M-5 225 V60" stroke="#ff7f0e" stroke-width="3" fill="none"/>
-    <path d="M14 225 H18 V70" stroke="#e8c000" stroke-width="3" fill="none"/>
-    <path d="M-17 363 H-19 V60" stroke="#222" stroke-width="3" fill="none"/>
+    <rect x="-12" y="78" width="5" height="26" fill="#d9c39a"/><rect x="7" y="78" width="5" height="26" fill="#d9c39a"/><text x="30" y="94">LED bay: resistors</text>
+    <rect x="-20" y="150" width="40" height="40" fill="#f4f4f2" stroke="#777"/><rect x="-6" y="158" width="20" height="24" fill="#222"/><text x="30" y="174">S2 HOURS holder</text>
+    <rect x="-20" y="480" width="40" height="40" fill="#f4f4f2" stroke="#777"/><rect x="-14" y="488" width="20" height="24" fill="#222"/><text x="30" y="504">S1 sleeve holder</text>
+    <rect x="-20" y="530" width="40" height="8" fill="#ffa040"/><text x="30" y="538">upper battery wall (slot)</text>
+    <rect x="-17" y="538" width="34" height="96" fill="#999" stroke="#555"/><text x="30" y="590">3 × LR44, + up</text>
+    <rect x="-20" y="634" width="40" height="8" fill="#ffa040"/><text x="30" y="644">lower battery wall</text>
+    <text x="30" y="664" fill="#555">black runs UNDER the cells</text>
+    <path d="M-4 534 V505 H-8" stroke="#d62728" stroke-width="3" fill="none"/>
+    <path d="M4 490 V168 H8 M4 168 V104 H9" stroke="#ff7f0e" stroke-width="3" fill="none"/>
+    <path d="M12 180 H14 V104" stroke="#e8c000" stroke-width="3" fill="none"/>
+    <path d="M0 638 V650 H-1 V534 M0 534 V70" stroke="#222" stroke-width="3" fill="none"/>
   </g>
 </svg>

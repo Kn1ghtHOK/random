@@ -80,24 +80,35 @@ MINUTES and WEEKS are printed into the panel. Only HOURS moves.
 
 ## Step 3: Wire the sled
 
-![step 3](images/assembly/step_03.png)
+![wiring on the sled](images/sled_wiring.png)
 ![wiring](images/wiring.png)
 
-Everything happens on the bench, with the sled lying on its spine.
+Everything happens on the bench. **Lay the sled on its spine** (the flat bar it printed on), so the round holders stand up like rings. From the bottom end to the top, it holds:
+- the **battery bay**: two thin walls with the cells clamped between them;
+- the **S1 (sleeve switch) holder**;
+- a long bare stretch of spine;
+- the **S2 (HOURS) holder**;
+- the **LED bay**: an open space under the LED head;
+- the **LED head**.
 
-1. **Switches:** trim the legs of both 6×6 switches to about 1.5 mm.
-   - **S2 (HOURS):** press it into the pocket under the LED head, plunger toward the front (the side the panel faces). Its legs go into the slots behind it.
-   - **S1 (sleeve):** press it into the pocket at the bottom end, plunger toward the back.
+**Where the wires go:**
+- **The slot:** every holder has a 1.6 mm slot cut down into its top, in the middle. The wires are simply **laid into those slots from above**, like a cable tray. Between the holders they just lie along the sled.
+- **Past the cells:** only one wire (black B−) has to get past the batteries. It runs in a channel **under** the cells, between the two low rails of the spine, and comes up through the slot in the upper battery wall.
+- **Wire size:** use thin wire (28–24 AWG, under about 1 mm thick with insulation).
+
+1. **Switches:** trim the legs of both 6×6 switches to about 1.5 mm. Use two legs that are **diagonally opposite**; that pair always switches.
+   - **S2 (HOURS):** press it into the pocket in the upper holder, plunger toward the front (the side the panel faces). Its legs sit in the open space behind it.
+   - **S1 (sleeve):** press it into the pocket in the lower holder, plunger toward the back.
 2. **LEDs and resistors:**
    - Solder the 270 Ω resistor to the red LED's long leg, and the 82 Ω resistor to the white LED's long leg.
-   - Push the legs down through the two holes in the LED head until the LED rims sit in their seats. **Red** goes on the side nearest the S2 plunger.
-   - The resistors lie in the bay under the head.
-3. **Wires:** lay them in the grooves along both sides of the spine; they pass under the cells there. Each is 25–70 mm long; the lengths are in the diagram.
-   - **B+ (red):** strip and tin 4 mm at one end. Push it through the hole in the **top** bulkhead and bend it flat against the bulkhead's lower face, which is where the + side of the cells will press. Run it down to one S1 leg.
-   - **N (orange):** from the S1 leg on the opposite side up to one S2 leg, and on to the 270 Ω resistor.
-   - **X (yellow):** from the S2 leg on the opposite side to the 82 Ω resistor.
-   - **B− (black):** a tinned end through the hole in the **bottom** bulkhead, bent flat against its upper face. Run it up to **both** LED short legs.
-4. **Test before batteries go in.** Hold 3 cells against the two bent wire ends. Press S1 and red should light; press S1 and S2 together and white should light too.
+   - Push the legs down through the two holes in the LED head until the LED rims sit in their seats. **Red** goes on the same side as the HOURS plunger.
+   - The legs and resistors hang down into the LED bay.
+3. **Wires**, lengths in the diagram:
+   - **B− (black):** strip and tin about 5 mm at one end and lay it flat on the **lower battery wall's** inner face; the cells will press on it. Run the wire along the channel under where the cells go, up through the slot in the **upper** battery wall, then in the slot all the way up to the LED bay. Connect it to **both** LED short legs.
+   - **B+ (red):** strip and tin about 5 mm at one end. Bend the end flat against the **upper battery wall's** lower face (feed it down through that wall's slot); the cells' + side presses on it. Run the other end in the slot to one S1 leg.
+   - **N (orange):** from the diagonally opposite S1 leg, up the slot to one S2 leg, and on up to the 270 Ω (red) resistor.
+   - **X (yellow):** from the diagonally opposite S2 leg up to the 82 Ω (white) resistor.
+4. **Test before the batteries go in.** Hold 3 stacked cells between the two tinned ends. Press S1 and red should light; press S1 and S2 together and white should light too.
 
 ---
 
@@ -105,7 +116,7 @@ Everything happens on the bench, with the sled lying on its spine.
 
 ![step 4](images/assembly/step_04.png)
 
-Stack **3 × LR44** with **+ (the flat, marked side) toward the LEDs**. Push the stack in **sideways** between the two bulkheads. The bulkheads flex 0.5 mm and clamp it onto the wire contacts; they act as the battery spring.
+Stack **3 × LR44** with **+ (the flat, marked side) up**, toward the switches and LEDs. Push the stack in **sideways** between the two battery walls at the bottom end, over the black wire. The walls flex 0.5 mm and clamp the cells onto the two tinned wire ends; they act as the battery spring.
 
 To change batteries later, undo steps 6 and 5 (cap off, sled out), swap the cells and put it back. That takes about a minute.
 
